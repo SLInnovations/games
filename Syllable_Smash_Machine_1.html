@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Syllable Smash Machine</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=Open+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --white: #FFFFFF;
+  --soft-blue: #d7ecf0;
+  --warm-yellow: #f3d25b;
+  --coral: #e66b5d;
+  --dark: #2d3436;
+  --body-text: #444444;
+  --muted: #888888;
+  --blue-dark: #a3cdd4;
+  --yellow-dark: #d4b840;
+  --coral-dark: #c9503f;
+  --blue-pale: #edf6f8;
+  --yellow-pale: #fdf5d9;
+  --coral-pale: #fceae7;
+  --success: #27ae60;
+  --success-pale: #e8f8f0;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Poppins', sans-serif;
+  background: linear-gradient(135deg, #f0f7f9 0%, #fefefe 40%, #fdf8ed 100%);
+  color: var(--body-text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ═══════════════════ HEADER ═══════════════════ */
+.app-header {
+  background: var(--white);
+  border-bottom: 3px solid var(--soft-blue);
+  padding: 12px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  position: relative;
+  z-index: 50;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.app-icon {
+  width: 44px;
+  height: 44px;
+  background: linear-gradient(135deg, var(--coral) 0%, var(--warm-yellow) 100%);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  box-shadow: 0 3px 8px rgba(230,107,93,0.3);
+}
+
+.app-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--dark);
+  letter-spacing: -0.5px;
+}
+
+.app-subtitle {
+  font-family: 'Open Sans', sans-serif;
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 500;
+  margin-top: -2px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.star-counter {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--yellow-pale);
+  border: 2px solid var(--warm-yellow);
+  border-radius: 24px;
+  padding: 6px 16px;
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--dark);
+}
+
+.star-counter .star-icon { font-size: 20px; }
+
+.btn {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  font-size: 12px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 2px solid var(--soft-blue);
+  background: var(--white);
+  color: var(--body-text);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.btn:hover { background: var(--blue-pale); border-color: var(--blue-dark); }
+.btn-coral { background: var(--coral); color: var(--white); border-color: var(--coral); }
+.btn-coral:hover { background: var(--coral-dark); border-color: var(--coral-dark); }
+.btn-icon {
+  width: 38px; height: 38px; padding: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; border-radius: 10px;
+}
+
+/* ═══════════════════ MAIN STAGE ═══════════════════ */
+.main-stage {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 32px 28px;
+  min-height: calc(100vh - 80px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* ═══════════════════ PROGRESS BAR ═══════════════════ */
+.progress-section { width: 100%; max-width: 600px; margin-bottom: 28px; }
+.progress-label {
+  font-family: 'Open Sans', sans-serif;
+  font-size: 11px; font-weight: 600; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px;
+  display: flex; justify-content: space-between;
+}
+.progress-track {
+  height: 10px; background: var(--blue-pale);
+  border-radius: 10px; overflow: hidden; border: 1px solid var(--soft-blue);
+}
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--soft-blue) 0%, var(--coral) 100%);
+  border-radius: 10px; transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ═══════════════════ SYLLABLE DISPLAY ═══════════════════ */
+.syllable-arena {
+  width: 100%; display: flex; flex-direction: column;
+  align-items: center; gap: 20px; margin-bottom: 24px;
+}
+.syllable-type-label {
+  font-family: 'Open Sans', sans-serif;
+  font-size: 11px; font-weight: 600; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 0.1em; min-height: 18px;
+}
+.syllable-cards-row {
+  display: flex; align-items: center; gap: 16px;
+  justify-content: center; flex-wrap: wrap; min-height: 140px;
+}
+.syllable-card {
+  background: var(--white);
+  border: 3px solid var(--soft-blue);
+  border-radius: 16px;
+  padding: 24px 36px; min-width: 120px; text-align: center;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+.syllable-card.revealed {
+  border-color: var(--coral);
+  box-shadow: 0 4px 20px rgba(230,107,93,0.15);
+  transform: scale(1.02);
+}
+.syllable-card.hidden-card {
+  background: var(--blue-pale); border-color: var(--soft-blue);
+}
+.syllable-card.hidden-card .syllable-text { visibility: hidden; }
+.syllable-text {
+  font-size: 48px; font-weight: 700; color: var(--dark);
+  line-height: 1.1; letter-spacing: 1px;
+}
+.syllable-type-badge {
+  position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%);
+  background: var(--warm-yellow); color: var(--dark);
+  font-family: 'Open Sans', sans-serif;
+  font-size: 9px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.08em; padding: 3px 10px; border-radius: 10px; white-space: nowrap;
+}
+.divider-dot {
+  width: 10px; height: 10px; background: var(--muted);
+  border-radius: 50%; opacity: 0.4; flex-shrink: 0;
+}
+
+/* Smashed state */
+.syllable-cards-row.smashed { gap: 0; }
+.syllable-cards-row.smashed .syllable-card {
+  border-radius: 0; border-right-width: 0;
+  padding: 24px 20px; border-color: var(--success); background: var(--success-pale);
+}
+.syllable-cards-row.smashed .syllable-card:first-child { border-radius: 16px 0 0 16px; }
+.syllable-cards-row.smashed .syllable-card:last-child { border-radius: 0 16px 16px 0; border-right-width: 3px; }
+.syllable-cards-row.smashed .syllable-card:only-child { border-radius: 16px; border-right-width: 3px; }
+.syllable-cards-row.smashed .divider-dot { display: none; }
+.syllable-cards-row.smashed .syllable-type-badge { background: var(--success); color: var(--white); }
+
+/* Whole word display after smash */
+.whole-word-display {
+  font-size: 56px; font-weight: 800; color: var(--dark); letter-spacing: 1px;
+  opacity: 0; transform: scale(0.9);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  min-height: 70px; display: flex; align-items: center; justify-content: center;
+}
+.whole-word-display.visible { opacity: 1; transform: scale(1); }
+
+/* ═══════════════════ ACTION BUTTONS ═══════════════════ */
+.action-area {
+  display: flex; gap: 12px; margin-bottom: 20px;
+  flex-wrap: wrap; justify-content: center;
+}
+.action-btn {
+  font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 16px;
+  padding: 14px 36px; border-radius: 14px; border: 3px solid;
+  cursor: pointer; transition: all 0.2s ease;
+  display: flex; align-items: center; gap: 8px;
+}
+.action-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.12); }
+.action-btn:active { transform: translateY(0); }
+.btn-reveal { background: var(--soft-blue); border-color: var(--blue-dark); color: var(--dark); }
+.btn-smash { background: var(--coral); border-color: var(--coral-dark); color: var(--white); }
+.btn-next { background: var(--warm-yellow); border-color: var(--yellow-dark); color: var(--dark); }
+.btn-disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
+
+.word-info {
+  font-family: 'Open Sans', sans-serif; font-size: 12px;
+  color: var(--muted); text-align: center; min-height: 20px;
+}
+
+/* ═══════════════════ SETTINGS PANEL ═══════════════════ */
+.settings-overlay {
+  position: fixed; inset: 0; background: rgba(45,52,54,0.4); z-index: 200;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity 0.25s ease;
+}
+.settings-overlay.open { opacity: 1; pointer-events: all; }
+.settings-panel {
+  background: var(--white); border-radius: 20px;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.15);
+  padding: 28px; width: 90%; max-width: 560px; max-height: 85vh; overflow-y: auto;
+}
+.settings-panel h2 { font-size: 20px; font-weight: 700; color: var(--dark); margin-bottom: 4px; }
+.settings-panel .settings-sub {
+  font-family: 'Open Sans', sans-serif; font-size: 12px; color: var(--muted); margin-bottom: 20px;
+}
+.settings-section { margin-bottom: 20px; }
+.settings-section h3 {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.08em; color: var(--muted); margin-bottom: 10px;
+  padding-bottom: 4px; border-bottom: 2px solid var(--blue-pale);
+}
+.toggle-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+.toggle-pill {
+  font-family: 'Poppins', sans-serif; font-size: 11px; font-weight: 600;
+  padding: 6px 14px; border-radius: 20px; border: 2px solid var(--soft-blue);
+  background: var(--white); color: var(--body-text); cursor: pointer;
+  transition: all 0.15s ease; user-select: none;
+}
+.toggle-pill:hover { border-color: var(--blue-dark); }
+.toggle-pill.active { background: var(--soft-blue); border-color: var(--blue-dark); color: var(--dark); }
+.toggle-pill.active::before { content: '✓ '; }
+
+.custom-words-area { margin-top: 12px; }
+.custom-words-area label {
+  font-family: 'Open Sans', sans-serif; font-size: 11px; font-weight: 600;
+  color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em;
+  display: block; margin-bottom: 4px;
+}
+.custom-words-area textarea {
+  font-family: 'Poppins', sans-serif; font-size: 12px; width: 100%;
+  min-height: 80px; padding: 10px 12px; border: 2px solid var(--soft-blue);
+  border-radius: 10px; resize: vertical; color: var(--body-text); transition: border-color 0.15s;
+}
+.custom-words-area textarea:focus { outline: none; border-color: var(--coral); }
+.custom-words-area .hint {
+  font-family: 'Open Sans', sans-serif; font-size: 10px; color: var(--muted);
+  margin-top: 4px; font-style: italic;
+}
+.settings-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+.syl-count-row { display: flex; gap: 8px; align-items: center; }
+
+.mode-tabs {
+  display: flex; gap: 4px; background: var(--blue-pale);
+  border-radius: 10px; padding: 3px; margin-bottom: 16px;
+}
+.mode-tab {
+  font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600;
+  padding: 6px 16px; border-radius: 8px; border: none;
+  background: transparent; color: var(--muted); cursor: pointer; transition: all 0.15s ease;
+}
+.mode-tab.active { background: var(--white); color: var(--dark); box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
+
+/* ═══════════════════ CELEBRATION ═══════════════════ */
+.celebration-screen { text-align: center; padding: 40px 20px; }
+.celebration-screen h2 { font-size: 32px; font-weight: 800; color: var(--dark); margin-bottom: 8px; }
+.celebration-screen .big-star { font-size: 64px; margin-bottom: 16px; }
+.celebration-screen .stats-grid {
+  display: flex; gap: 16px; justify-content: center; margin: 24px 0; flex-wrap: wrap;
+}
+.stat-card {
+  background: var(--white); border: 2px solid var(--soft-blue);
+  border-radius: 14px; padding: 16px 24px; min-width: 120px;
+}
+.stat-card .stat-num { font-size: 28px; font-weight: 800; color: var(--coral); }
+.stat-card .stat-label {
+  font-family: 'Open Sans', sans-serif; font-size: 10px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted);
+}
+
+/* ═══════════════════ WACKY WORD ═══════════════════ */
+.wacky-word-card {
+  background: linear-gradient(135deg, var(--yellow-pale) 0%, var(--coral-pale) 100%);
+  border: 3px solid var(--warm-yellow);
+  border-radius: 20px;
+  padding: 24px 32px;
+  margin: 20px auto;
+  max-width: 480px;
+  text-align: center;
+  box-shadow: 0 6px 24px rgba(243,210,91,0.2);
+}
+.wacky-word-label {
+  font-family: 'Open Sans', sans-serif;
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.12em; color: var(--coral);
+  margin-bottom: 8px;
+}
+.wacky-word-text {
+  font-size: 42px; font-weight: 800; color: var(--dark);
+  letter-spacing: 1px; margin-bottom: 4px;
+  opacity: 0; transform: scale(0.8);
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.wacky-word-text.visible { opacity: 1; transform: scale(1); }
+.wacky-word-syllables {
+  font-size: 18px; font-weight: 600; color: var(--coral);
+  letter-spacing: 2px; margin-bottom: 10px;
+  opacity: 0; transition: opacity 0.4s ease 0.3s;
+}
+.wacky-word-syllables.visible { opacity: 1; }
+.wacky-word-meaning {
+  font-family: 'Open Sans', sans-serif;
+  font-size: 13px; color: var(--body-text);
+  font-style: italic; line-height: 1.6;
+  opacity: 0; transition: opacity 0.4s ease 0.6s;
+}
+.wacky-word-meaning.visible { opacity: 1; }
+.wacky-word-btn {
+  margin-top: 14px;
+  font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 13px;
+  padding: 8px 20px; border-radius: 10px; border: 2px solid var(--coral);
+  background: var(--white); color: var(--coral); cursor: pointer;
+  transition: all 0.15s ease;
+  opacity: 0; transition: opacity 0.4s ease 0.6s;
+}
+.wacky-word-btn.visible { opacity: 1; }
+.wacky-word-btn:hover { background: var(--coral); color: var(--white); }
+
+/* ═══════════════════ CONFETTI ═══════════════════ */
+.confetti-piece {
+  position: fixed; width: 10px; height: 10px; border-radius: 2px;
+  z-index: 300; pointer-events: none;
+  animation: confettiFall 2.5s ease-out forwards;
+}
+@keyframes confettiFall {
+  0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+}
+
+@keyframes popIn {
+  0% { transform: scale(0.8); opacity: 0; }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); opacity: 1; }
+}
+.pop-in { animation: popIn 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+
+@media (max-width: 600px) {
+  .syllable-text { font-size: 36px; }
+  .syllable-card { padding: 18px 24px; min-width: 90px; }
+  .whole-word-display { font-size: 40px; }
+  .action-btn { font-size: 14px; padding: 12px 24px; }
+  .wacky-word-text { font-size: 32px; }
+}
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <div class="header-left">
+    <div class="app-icon">💥</div>
+    <div>
+      <div class="app-title">Syllable Smash</div>
+      <div class="app-subtitle">Multisyllabic Word Practice · Structured Steps to Reading</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="star-counter">
+      <span class="star-icon">⭐</span>
+      <span id="starCount">0</span>
+    </div>
+    <button class="btn btn-icon" onclick="openSettings()" title="Settings">⚙️</button>
+    <button class="btn btn-icon" onclick="resetSession()" title="Start Over">🔄</button>
+  </div>
+</div>
+
+<div class="main-stage" id="mainStage">
+  <div class="progress-section">
+    <div class="progress-label">
+      <span id="progressText">Word 1 of 10</span>
+      <span id="progressPct">0%</span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progressFill" style="width:0%"></div>
+    </div>
+  </div>
+
+  <div class="syllable-arena" id="syllableArena">
+    <div class="syllable-type-label" id="syllableTypeLabel"></div>
+    <div class="syllable-cards-row" id="syllableCards"></div>
+    <div class="whole-word-display" id="wholeWord"></div>
+  </div>
+
+  <div class="action-area" id="actionArea">
+    <button class="action-btn btn-reveal" id="btnReveal" onclick="revealNext()">👁️ Reveal Syllable</button>
+    <button class="action-btn btn-smash btn-disabled" id="btnSmash" onclick="smashWord()">💥 SMASH!</button>
+    <button class="action-btn btn-next btn-disabled" id="btnNext" onclick="nextWord()">➡️ Next Word</button>
+  </div>
+
+  <div class="word-info" id="wordInfo"></div>
+</div>
+
+<div class="settings-overlay" id="settingsOverlay" onclick="if(event.target===this)closeSettings()">
+  <div class="settings-panel">
+    <h2>⚙️ Session Settings</h2>
+    <p class="settings-sub">Configure syllable types, word count, and custom word lists</p>
+    <div class="settings-section">
+      <h3>Word Source</h3>
+      <div class="mode-tabs" id="modeTabs">
+        <button class="mode-tab active" onclick="setMode('random')">🎲 Random from Bank</button>
+        <button class="mode-tab" onclick="setMode('custom')">📝 Custom Word List</button>
+      </div>
+      <div id="randomSettings">
+        <div style="margin-bottom:12px;">
+          <label style="font-family:'Open Sans';font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;display:block;margin-bottom:6px;">Syllable Count</label>
+          <div class="syl-count-row">
+            <div class="toggle-pill active" data-syl="2" onclick="toggleSylCount(this)">2 Syllables</div>
+            <div class="toggle-pill active" data-syl="3" onclick="toggleSylCount(this)">3 Syllables</div>
+          </div>
+        </div>
+        <label style="font-family:'Open Sans';font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;display:block;margin-bottom:6px;">Syllable Types to Include</label>
+        <div class="toggle-grid" id="sylTypeToggles"></div>
+        <div style="margin-top:12px;">
+          <label style="font-family:'Open Sans';font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;display:block;margin-bottom:6px;">Words Per Round</label>
+          <div class="toggle-grid">
+            <div class="toggle-pill" data-count="5" onclick="setWordCount(this)">5</div>
+            <div class="toggle-pill active" data-count="10" onclick="setWordCount(this)">10</div>
+            <div class="toggle-pill" data-count="15" onclick="setWordCount(this)">15</div>
+            <div class="toggle-pill" data-count="20" onclick="setWordCount(this)">20</div>
+          </div>
+        </div>
+      </div>
+      <div id="customSettings" style="display:none;">
+        <div class="custom-words-area">
+          <label>Enter Words (one per line, use · or | to mark syllable breaks)</label>
+          <textarea id="customWordsInput" placeholder="e.g.&#10;nap·kin&#10;sun|set&#10;fan·tas·tic&#10;in·vit·ing"></textarea>
+          <div class="hint">Use · (middle dot) or | (pipe) between syllables. Syllable types will be auto-detected where possible.</div>
+        </div>
+      </div>
+    </div>
+    <div class="settings-section">
+      <h3>Display Options</h3>
+      <div class="toggle-grid">
+        <div class="toggle-pill active" id="toggleLabels" onclick="this.classList.toggle('active')">Show Syllable Type Labels</div>
+        <div class="toggle-pill active" id="toggleProgress" onclick="this.classList.toggle('active')">Show Progress Bar</div>
+      </div>
+    </div>
+    <div class="settings-actions">
+      <button class="btn" onclick="closeSettings()">Cancel</button>
+      <button class="btn btn-coral" onclick="applySettings()">Start Round ▶</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// SYLLABLE TYPES
+// ═══════════════════════════════════════════════════════════
+const SYLLABLE_TYPES = {
+  CL: { label: 'Closed', color: 'var(--soft-blue)' },
+  VE: { label: 'V-e', color: 'var(--coral-pale)' },
+  OP: { label: 'Open', color: 'var(--yellow-pale)' },
+  RC: { label: 'R-Controlled', color: '#e8dff0' },
+};
+
+// ═══════════════════════════════════════════════════════════
+// AUDITED WORD BANK
+// Every syllable division verified against pronunciation
+// Scope: Units 1–3 + V-e, Open, VCV, R-controlled, Vowel Y
+// NO vowel teams, NO soft c/g, NO C'le, NO schwa-dependent
+// ═══════════════════════════════════════════════════════════
+const WORD_BANK = {
+  two: [
+    // ─── Closed + Closed (VCCV) ───
+    { word: 'napkin', syllables: [{text:'nap',type:'CL'},{text:'kin',type:'CL'}] },
+    { word: 'rabbit', syllables: [{text:'rab',type:'CL'},{text:'bit',type:'CL'}] },
+    { word: 'basket', syllables: [{text:'bas',type:'CL'},{text:'ket',type:'CL'}] },
+    { word: 'sunlit', syllables: [{text:'sun',type:'CL'},{text:'lit',type:'CL'}] },
+    { word: 'catnip', syllables: [{text:'cat',type:'CL'},{text:'nip',type:'CL'}] },
+    { word: 'insect', syllables: [{text:'in',type:'CL'},{text:'sect',type:'CL'}] },
+    { word: 'bobsled', syllables: [{text:'bob',type:'CL'},{text:'sled',type:'CL'}] },
+    { word: 'helmet', syllables: [{text:'hel',type:'CL'},{text:'met',type:'CL'}] },
+    { word: 'mascot', syllables: [{text:'mas',type:'CL'},{text:'cot',type:'CL'}] },
+    { word: 'muffin', syllables: [{text:'muf',type:'CL'},{text:'fin',type:'CL'}] },
+    { word: 'kitten', syllables: [{text:'kit',type:'CL'},{text:'ten',type:'CL'}] },
+    { word: 'mitten', syllables: [{text:'mit',type:'CL'},{text:'ten',type:'CL'}] },
+    { word: 'button', syllables: [{text:'but',type:'CL'},{text:'ton',type:'CL'}] },
+    { word: 'ribbon', syllables: [{text:'rib',type:'CL'},{text:'bon',type:'CL'}] },
+    { word: 'cotton', syllables: [{text:'cot',type:'CL'},{text:'ton',type:'CL'}] },
+    { word: 'fossil', syllables: [{text:'fos',type:'CL'},{text:'sil',type:'CL'}] },
+    { word: 'picnic', syllables: [{text:'pic',type:'CL'},{text:'nic',type:'CL'}] },
+    { word: 'dentist', syllables: [{text:'den',type:'CL'},{text:'tist',type:'CL'}] },
+    { word: 'subject', syllables: [{text:'sub',type:'CL'},{text:'ject',type:'CL'}] },
+    { word: 'contest', syllables: [{text:'con',type:'CL'},{text:'test',type:'CL'}] },
+    { word: 'disgust', syllables: [{text:'dis',type:'CL'},{text:'gust',type:'CL'}] },
+    { word: 'distrust', syllables: [{text:'dis',type:'CL'},{text:'trust',type:'CL'}] },
+    { word: 'campus', syllables: [{text:'cam',type:'CL'},{text:'pus',type:'CL'}] },
+    { word: 'catfish', syllables: [{text:'cat',type:'CL'},{text:'fish',type:'CL'}] },
+    { word: 'bathtub', syllables: [{text:'bath',type:'CL'},{text:'tub',type:'CL'}] },
+    { word: 'hotdog', syllables: [{text:'hot',type:'CL'},{text:'dog',type:'CL'}] },
+    { word: 'nutshell', syllables: [{text:'nut',type:'CL'},{text:'shell',type:'CL'}] },
+    { word: 'sunset', syllables: [{text:'sun',type:'CL'},{text:'set',type:'CL'}] },
+    { word: 'kidnap', syllables: [{text:'kid',type:'CL'},{text:'nap',type:'CL'}] },
+    { word: 'cobweb', syllables: [{text:'cob',type:'CL'},{text:'web',type:'CL'}] },
+    { word: 'misfit', syllables: [{text:'mis',type:'CL'},{text:'fit',type:'CL'}] },
+    { word: 'unplug', syllables: [{text:'un',type:'CL'},{text:'plug',type:'CL'}] },
+    // Previously miscategorized as Open — these are VCCV with short vowels
+    { word: 'seven', syllables: [{text:'sev',type:'CL'},{text:'en',type:'CL'}] },
+    { word: 'melon', syllables: [{text:'mel',type:'CL'},{text:'on',type:'CL'}] },
+    { word: 'lemon', syllables: [{text:'lem',type:'CL'},{text:'on',type:'CL'}] },
+    { word: 'cabin', syllables: [{text:'cab',type:'CL'},{text:'in',type:'CL'}] },
+    { word: 'wagon', syllables: [{text:'wag',type:'CL'},{text:'on',type:'CL'}] },
+    { word: 'novel', syllables: [{text:'nov',type:'CL'},{text:'el',type:'CL'}] },
+    { word: 'model', syllables: [{text:'mod',type:'CL'},{text:'el',type:'CL'}] },
+    { word: 'panel', syllables: [{text:'pan',type:'CL'},{text:'el',type:'CL'}] },
+    { word: 'solid', syllables: [{text:'sol',type:'CL'},{text:'id',type:'CL'}] },
+    { word: 'limit', syllables: [{text:'lim',type:'CL'},{text:'it',type:'CL'}] },
+    { word: 'visit', syllables: [{text:'vis',type:'CL'},{text:'it',type:'CL'}] },
+    { word: 'comet', syllables: [{text:'com',type:'CL'},{text:'et',type:'CL'}] },
+    { word: 'closet', syllables: [{text:'clos',type:'CL'},{text:'et',type:'CL'}] },
+    { word: 'planet', syllables: [{text:'plan',type:'CL'},{text:'et',type:'CL'}] },
+
+    // ─── Closed + V-e ───
+    { word: 'mistake', syllables: [{text:'mis',type:'CL'},{text:'take',type:'VE'}] },
+    { word: 'cupcake', syllables: [{text:'cup',type:'CL'},{text:'cake',type:'VE'}] },
+    { word: 'reptile', syllables: [{text:'rep',type:'CL'},{text:'tile',type:'VE'}] },
+    { word: 'costume', syllables: [{text:'cos',type:'CL'},{text:'tume',type:'VE'}] },
+    { word: 'dispute', syllables: [{text:'dis',type:'CL'},{text:'pute',type:'VE'}] },
+    { word: 'invite', syllables: [{text:'in',type:'CL'},{text:'vite',type:'VE'}] },
+    { word: 'escape', syllables: [{text:'es',type:'CL'},{text:'cape',type:'VE'}] },
+    { word: 'explode', syllables: [{text:'ex',type:'CL'},{text:'plode',type:'VE'}] },
+    { word: 'stampede', syllables: [{text:'stam',type:'CL'},{text:'pede',type:'VE'}] },
+    { word: 'complete', syllables: [{text:'com',type:'CL'},{text:'plete',type:'VE'}] },
+    { word: 'compete', syllables: [{text:'com',type:'CL'},{text:'pete',type:'VE'}] },
+    { word: 'confuse', syllables: [{text:'con',type:'CL'},{text:'fuse',type:'VE'}] },
+    { word: 'surprise', syllables: [{text:'sur',type:'RC'},{text:'prise',type:'VE'}] },
+
+    // ─── V-e + Closed ───
+    { word: 'baseline', syllables: [{text:'base',type:'VE'},{text:'line',type:'VE'}] },
+    { word: 'lifetime', syllables: [{text:'life',type:'VE'},{text:'time',type:'VE'}] },
+
+    // ─── Open + Closed (VCV — first syllable long) ───
+    { word: 'robot', syllables: [{text:'ro',type:'OP'},{text:'bot',type:'CL'}] },
+    { word: 'focus', syllables: [{text:'fo',type:'OP'},{text:'cus',type:'CL'}] },
+    { word: 'bonus', syllables: [{text:'bo',type:'OP'},{text:'nus',type:'CL'}] },
+    { word: 'music', syllables: [{text:'mu',type:'OP'},{text:'sic',type:'CL'}] },
+    { word: 'basic', syllables: [{text:'ba',type:'OP'},{text:'sic',type:'CL'}] },
+    { word: 'moment', syllables: [{text:'mo',type:'OP'},{text:'ment',type:'CL'}] },
+    { word: 'student', syllables: [{text:'stu',type:'OP'},{text:'dent',type:'CL'}] },
+    { word: 'frozen', syllables: [{text:'fro',type:'OP'},{text:'zen',type:'CL'}] },
+    { word: 'broken', syllables: [{text:'bro',type:'OP'},{text:'ken',type:'CL'}] },
+    { word: 'spoken', syllables: [{text:'spo',type:'OP'},{text:'ken',type:'CL'}] },
+    { word: 'human', syllables: [{text:'hu',type:'OP'},{text:'man',type:'CL'}] },
+    { word: 'silent', syllables: [{text:'si',type:'OP'},{text:'lent',type:'CL'}] },
+    { word: 'total', syllables: [{text:'to',type:'OP'},{text:'tal',type:'CL'}] },
+
+    // ─── Open + V-e ───
+    { word: 'donate', syllables: [{text:'do',type:'OP'},{text:'nate',type:'VE'}] },
+    { word: 'locate', syllables: [{text:'lo',type:'OP'},{text:'cate',type:'VE'}] },
+    { word: 'create', syllables: [{text:'cre',type:'OP'},{text:'ate',type:'VE'}] },
+
+    // ─── R-Controlled combinations ───
+    { word: 'garden', syllables: [{text:'gar',type:'RC'},{text:'den',type:'CL'}] },
+    { word: 'market', syllables: [{text:'mar',type:'RC'},{text:'ket',type:'CL'}] },
+    { word: 'carpet', syllables: [{text:'car',type:'RC'},{text:'pet',type:'CL'}] },
+    { word: 'target', syllables: [{text:'tar',type:'RC'},{text:'get',type:'CL'}] },
+    { word: 'corner', syllables: [{text:'cor',type:'RC'},{text:'ner',type:'RC'}] },
+    { word: 'winter', syllables: [{text:'win',type:'CL'},{text:'ter',type:'RC'}] },
+    { word: 'master', syllables: [{text:'mas',type:'CL'},{text:'ter',type:'RC'}] },
+    { word: 'sister', syllables: [{text:'sis',type:'CL'},{text:'ter',type:'RC'}] },
+    { word: 'number', syllables: [{text:'num',type:'CL'},{text:'ber',type:'RC'}] },
+    { word: 'thunder', syllables: [{text:'thun',type:'CL'},{text:'der',type:'RC'}] },
+    { word: 'silver', syllables: [{text:'sil',type:'CL'},{text:'ver',type:'RC'}] },
+    { word: 'better', syllables: [{text:'bet',type:'CL'},{text:'ter',type:'RC'}] },
+    { word: 'dinner', syllables: [{text:'din',type:'CL'},{text:'ner',type:'RC'}] },
+    { word: 'supper', syllables: [{text:'sup',type:'CL'},{text:'per',type:'RC'}] },
+    { word: 'border', syllables: [{text:'bor',type:'RC'},{text:'der',type:'RC'}] },
+    { word: 'order', syllables: [{text:'or',type:'RC'},{text:'der',type:'RC'}] },
+    { word: 'forget', syllables: [{text:'for',type:'RC'},{text:'get',type:'CL'}] },
+    { word: 'party', syllables: [{text:'par',type:'RC'},{text:'ty',type:'OP'}] },
+    { word: 'dirty', syllables: [{text:'dir',type:'RC'},{text:'ty',type:'OP'}] },
+    { word: 'sturdy', syllables: [{text:'stur',type:'RC'},{text:'dy',type:'OP'}] },
+    { word: 'thirty', syllables: [{text:'thir',type:'RC'},{text:'ty',type:'OP'}] },
+    { word: 'perfect', syllables: [{text:'per',type:'RC'},{text:'fect',type:'CL'}] },
+    { word: 'perhaps', syllables: [{text:'per',type:'RC'},{text:'haps',type:'CL'}] },
+    { word: 'absorb', syllables: [{text:'ab',type:'CL'},{text:'sorb',type:'RC'}] },
+  ],
+
+  three: [
+    // ─── All Closed ───
+    { word: 'fantastic', syllables: [{text:'fan',type:'CL'},{text:'tas',type:'CL'},{text:'tic',type:'CL'}] },
+    { word: 'establish', syllables: [{text:'es',type:'CL'},{text:'tab',type:'CL'},{text:'lish',type:'CL'}] },
+    { word: 'Atlantic', syllables: [{text:'At',type:'CL'},{text:'lan',type:'CL'},{text:'tic',type:'CL'}] },
+
+    // ─── Mixed with Open (VCV — verified long first vowel) ───
+    { word: 'hospital', syllables: [{text:'hos',type:'CL'},{text:'pi',type:'OP'},{text:'tal',type:'CL'}] },
+    { word: 'continent', syllables: [{text:'con',type:'CL'},{text:'ti',type:'OP'},{text:'nent',type:'CL'}] },
+    { word: 'nominate', syllables: [{text:'nom',type:'CL'},{text:'i',type:'OP'},{text:'nate',type:'VE'}] },
+    { word: 'lemonade', syllables: [{text:'lem',type:'CL'},{text:'on',type:'CL'},{text:'ade',type:'VE'}] },
+    { word: 'trampoline', syllables: [{text:'tram',type:'CL'},{text:'po',type:'OP'},{text:'line',type:'VE'}] },
+    { word: 'candidate', syllables: [{text:'can',type:'CL'},{text:'di',type:'OP'},{text:'date',type:'VE'}] },
+
+    // ─── Mixed with R-Controlled ───
+    { word: 'computer', syllables: [{text:'com',type:'CL'},{text:'pu',type:'OP'},{text:'ter',type:'RC'}] },
+    { word: 'important', syllables: [{text:'im',type:'CL'},{text:'por',type:'RC'},{text:'tant',type:'CL'}] },
+    { word: 'hamburger', syllables: [{text:'ham',type:'CL'},{text:'bur',type:'RC'},{text:'ger',type:'RC'}] },
+    { word: 'September', syllables: [{text:'Sep',type:'CL'},{text:'tem',type:'CL'},{text:'ber',type:'RC'}] },
+    { word: 'November', syllables: [{text:'No',type:'OP'},{text:'vem',type:'CL'},{text:'ber',type:'RC'}] },
+    { word: 'forgotten', syllables: [{text:'for',type:'RC'},{text:'got',type:'CL'},{text:'ten',type:'CL'}] },
+    { word: 'carpenter', syllables: [{text:'car',type:'RC'},{text:'pen',type:'CL'},{text:'ter',type:'RC'}] },
+    { word: 'whatever', syllables: [{text:'what',type:'CL'},{text:'ev',type:'CL'},{text:'er',type:'RC'}] },
+    { word: 'adventure', syllables: [{text:'ad',type:'CL'},{text:'ven',type:'CL'},{text:'ture',type:'RC'}] },
+    { word: 'understand', syllables: [{text:'un',type:'CL'},{text:'der',type:'RC'},{text:'stand',type:'CL'}] },
+    { word: 'different', syllables: [{text:'dif',type:'CL'},{text:'fer',type:'RC'},{text:'ent',type:'CL'}] },
+    { word: 'consider', syllables: [{text:'con',type:'CL'},{text:'sid',type:'CL'},{text:'er',type:'RC'}] },
+    { word: 'remember', syllables: [{text:'re',type:'OP'},{text:'mem',type:'CL'},{text:'ber',type:'RC'}] },
+    { word: 'discover', syllables: [{text:'dis',type:'CL'},{text:'cov',type:'CL'},{text:'er',type:'RC'}] },
+    { word: 'surrender', syllables: [{text:'sur',type:'RC'},{text:'ren',type:'CL'},{text:'der',type:'RC'}] },
+    { word: 'discomfort', syllables: [{text:'dis',type:'CL'},{text:'com',type:'CL'},{text:'fort',type:'RC'}] },
+  ]
+};
+
+// ═══════════════════════════════════════════════════════════
+// WACKY WORDS — fun, real, multisyllabic words
+// These are meant to be a fun challenge; scope is relaxed
+// since teacher reads WITH the student
+// ═══════════════════════════════════════════════════════════
+const WACKY_WORDS = [
+  { word: 'hullabaloo', syllables: 'hul·la·ba·loo', meaning: 'A big noisy fuss about something — like when someone finds a spider in the classroom.' },
+  { word: 'kerfuffle', syllables: 'ker·fuf·fle', meaning: 'A commotion or fuss, especially one caused by a disagreement. A very British word!' },
+  { word: 'lollygag', syllables: 'lol·ly·gag', meaning: 'To spend time doing nothing, or to dawdle. "Stop lollygagging and get your boots on!"' },
+  { word: 'flabbergasted', syllables: 'flab·ber·gast·ed', meaning: 'So surprised that you don\'t know what to say — your mouth just hangs open!' },
+  { word: 'gobbledygook', syllables: 'gob·ble·dy·gook', meaning: 'Language that sounds like complete nonsense — like made-up rules that don\'t make sense.' },
+  { word: 'discombobulate', syllables: 'dis·com·bob·u·late', meaning: 'To confuse or frustrate someone. "The tricky math problem discombobulated me."' },
+  { word: 'bamboozle', syllables: 'bam·boo·zle', meaning: 'To trick or confuse someone in a sneaky way. "Don\'t let the magician bamboozle you!"' },
+  { word: 'brouhaha', syllables: 'brou·ha·ha', meaning: 'A big, noisy reaction to something — like when the whole school hears a surprise announcement.' },
+  { word: 'cattywampus', syllables: 'cat·ty·wam·pus', meaning: 'Crooked, tilted, or not quite right. "That picture frame is all cattywampus!"' },
+  { word: 'shenanigans', syllables: 'she·nan·i·gans', meaning: 'Silly, mischievous tricks or behaviour. "No shenanigans during indoor recess!"' },
+  { word: 'rambunctious', syllables: 'ram·bunc·tious', meaning: 'Full of wild, noisy energy — like a puppy who just got off the leash.' },
+  { word: 'whippersnapper', syllables: 'whip·per·snap·per', meaning: 'A cheeky young person who thinks they know everything. Grandparents love this word!' },
+  { word: 'skedaddle', syllables: 'ske·dad·dle', meaning: 'To run away really fast — "When the skunk appeared, we skedaddled!"' },
+  { word: 'rigmarole', syllables: 'rig·ma·role', meaning: 'A long, complicated, and annoying process. "What a rigmarole just to sign up!"' },
+  { word: 'pandemonium', syllables: 'pan·de·mo·ni·um', meaning: 'Wild, noisy chaos — like the hallway on the last day of school.' },
+  { word: 'hodgepodge', syllables: 'hodge·podge', meaning: 'A messy mixture of different things all jumbled together.' },
+  { word: 'topsy-turvy', syllables: 'top·sy·tur·vy', meaning: 'Completely upside down or in total disorder. "The wind turned the yard topsy-turvy!"' },
+  { word: 'zigzag', syllables: 'zig·zag', meaning: 'A line that goes sharply left, then right, then left again — like a lightning bolt!' },
+  { word: 'razzmatazz', syllables: 'razz·ma·tazz', meaning: 'Flashy, exciting showiness — all the sparkle and dazzle of a big performance.' },
+  { word: 'thingamajig', syllables: 'thing·a·ma·jig', meaning: 'A word you use when you can\'t remember what something is actually called!' },
+];
+
+// ═══════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════
+let session = {
+  mode: 'random',
+  sylCounts: [2, 3],
+  sylTypes: ['CL', 'VE', 'OP', 'RC'],
+  wordsPerRound: 10,
+  showLabels: true,
+  showProgress: true,
+  words: [],
+  currentIndex: 0,
+  revealedCount: 0,
+  smashed: false,
+  stars: 0,
+  wordsCompleted: 0,
+  usedWackyWords: [],
+};
+
+// ═══════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════
+function init() {
+  buildSylTypeToggles();
+  generateRound();
+}
+
+function buildSylTypeToggles() {
+  const container = document.getElementById('sylTypeToggles');
+  container.innerHTML = '';
+  Object.entries(SYLLABLE_TYPES).forEach(([key, val]) => {
+    const pill = document.createElement('div');
+    pill.className = 'toggle-pill active';
+    pill.dataset.type = key;
+    pill.textContent = val.label;
+    pill.onclick = () => pill.classList.toggle('active');
+    container.appendChild(pill);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+// GENERATE ROUND
+// ═══════════════════════════════════════════════════════════
+function generateRound() {
+  if (session.mode === 'custom') {
+    session.words = parseCustomWords();
+  } else {
+    session.words = generateRandomWords();
+  }
+
+  if (session.words.length === 0) {
+    alert('No words available with the selected settings. Try enabling more syllable types or counts.');
+    return;
+  }
+
+  session.currentIndex = 0;
+  session.revealedCount = 0;
+  session.smashed = false;
+  session.wordsCompleted = 0;
+
+  document.getElementById('actionArea').style.display = 'flex';
+  showWord();
+  updateProgress();
+}
+
+function generateRandomWords() {
+  let pool = [];
+  session.sylCounts.forEach(count => {
+    const key = count === 2 ? 'two' : 'three';
+    const words = WORD_BANK[key] || [];
+    const filtered = words.filter(w =>
+      w.syllables.every(s => session.sylTypes.includes(s.type))
+    );
+    pool = pool.concat(filtered);
+  });
+
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+
+  return pool.slice(0, session.wordsPerRound);
+}
+
+function parseCustomWords() {
+  const text = document.getElementById('customWordsInput').value.trim();
+  if (!text) return [];
+  return text.split('\n').filter(line => line.trim()).map(line => {
+    const parts = line.trim().split(/[·|]/);
+    return {
+      word: parts.join(''),
+      syllables: parts.map(p => ({ text: p.trim(), type: detectSylType(p.trim()) }))
+    };
+  });
+}
+
+function detectSylType(syl) {
+  const s = syl.toLowerCase();
+  if (/[aeiou]r$/i.test(s) && s.length >= 2) return 'RC';
+  if (/[aeiou][^aeiou]*e$/i.test(s) && s.length > 2 && !/[aeiou][aeiou]/i.test(s)) return 'VE';
+  if (/[aeiou]$/i.test(s) && s.length <= 3) return 'OP';
+  return 'CL';
+}
+
+// ═══════════════════════════════════════════════════════════
+// DISPLAY WORD
+// ═══════════════════════════════════════════════════════════
+function showWord() {
+  const word = session.words[session.currentIndex];
+  if (!word) return showCelebration();
+
+  session.revealedCount = 0;
+  session.smashed = false;
+
+  const cardsRow = document.getElementById('syllableCards');
+  cardsRow.className = 'syllable-cards-row';
+  cardsRow.innerHTML = '';
+
+  const wholeWord = document.getElementById('wholeWord');
+  wholeWord.className = 'whole-word-display';
+  wholeWord.textContent = '';
+
+  word.syllables.forEach((syl, i) => {
+    if (i > 0) {
+      const dot = document.createElement('div');
+      dot.className = 'divider-dot';
+      cardsRow.appendChild(dot);
+    }
+
+    const card = document.createElement('div');
+    card.className = 'syllable-card hidden-card';
+    card.dataset.index = i;
+
+    const text = document.createElement('div');
+    text.className = 'syllable-text';
+    text.textContent = syl.text;
+    card.appendChild(text);
+
+    if (session.showLabels) {
+      const badge = document.createElement('div');
+      badge.className = 'syllable-type-badge';
+      badge.textContent = SYLLABLE_TYPES[syl.type]?.label || syl.type;
+      card.appendChild(badge);
+    }
+
+    cardsRow.appendChild(card);
+  });
+
+  const typeLabel = document.getElementById('syllableTypeLabel');
+  const types = [...new Set(word.syllables.map(s => SYLLABLE_TYPES[s.type]?.label || s.type))];
+  typeLabel.textContent = types.join(' · ');
+
+  document.getElementById('wordInfo').textContent = `${word.syllables.length} syllables`;
+
+  document.getElementById('btnReveal').classList.remove('btn-disabled');
+  document.getElementById('btnSmash').classList.add('btn-disabled');
+  document.getElementById('btnNext').classList.add('btn-disabled');
+}
+
+// ═══════════════════════════════════════════════════════════
+// INTERACTIONS
+// ═══════════════════════════════════════════════════════════
+function revealNext() {
+  const word = session.words[session.currentIndex];
+  if (!word || session.smashed) return;
+
+  if (session.revealedCount < word.syllables.length) {
+    const cards = document.querySelectorAll('.syllable-card');
+    const card = cards[session.revealedCount];
+    card.classList.remove('hidden-card');
+    card.classList.add('revealed', 'pop-in');
+    session.revealedCount++;
+
+    if (session.revealedCount >= word.syllables.length) {
+      document.getElementById('btnReveal').classList.add('btn-disabled');
+      document.getElementById('btnSmash').classList.remove('btn-disabled');
+    }
+  }
+}
+
+function smashWord() {
+  const word = session.words[session.currentIndex];
+  if (!word || session.smashed) return;
+  session.smashed = true;
+
+  const cardsRow = document.getElementById('syllableCards');
+  cardsRow.classList.add('smashed');
+
+  setTimeout(() => {
+    const wholeWord = document.getElementById('wholeWord');
+    wholeWord.textContent = word.word;
+    wholeWord.classList.add('visible');
+  }, 400);
+
+  session.stars++;
+  session.wordsCompleted++;
+  document.getElementById('starCount').textContent = session.stars;
+  updateProgress();
+
+  document.getElementById('btnSmash').classList.add('btn-disabled');
+  document.getElementById('btnNext').classList.remove('btn-disabled');
+
+  spawnConfetti(5);
+}
+
+function nextWord() {
+  session.currentIndex++;
+  if (session.currentIndex >= session.words.length) {
+    showCelebration();
+  } else {
+    showWord();
+  }
+}
+
+function updateProgress() {
+  const total = session.words.length;
+  const done = session.wordsCompleted;
+  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+  document.getElementById('progressText').textContent =
+    done < total ? `Word ${done + 1} of ${total}` : `${done} of ${total} complete!`;
+  document.getElementById('progressPct').textContent = `${pct}%`;
+  document.getElementById('progressFill').style.width = `${pct}%`;
+  document.querySelector('.progress-section').style.display = session.showProgress ? 'block' : 'none';
+}
+
+// ═══════════════════════════════════════════════════════════
+// CELEBRATION + WACKY WORD
+// ═══════════════════════════════════════════════════════════
+function getWackyWord() {
+  const available = WACKY_WORDS.filter(w => !session.usedWackyWords.includes(w.word));
+  if (available.length === 0) session.usedWackyWords = []; // reset if all used
+  const pool = available.length > 0 ? available : WACKY_WORDS;
+  const pick = pool[Math.floor(Math.random() * pool.length)];
+  session.usedWackyWords.push(pick.word);
+  return pick;
+}
+
+function showCelebration() {
+  const wacky = getWackyWord();
+  const arena = document.getElementById('syllableArena');
+  const actions = document.getElementById('actionArea');
+  const info = document.getElementById('wordInfo');
+
+  arena.innerHTML = `
+    <div class="celebration-screen">
+      <div class="big-star">🌟</div>
+      <h2>Amazing Work!</h2>
+      <p style="color:var(--muted);font-size:14px;margin-bottom:4px;">Round Complete</p>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-num">${session.wordsCompleted}</div>
+          <div class="stat-label">Words Smashed</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num">${session.stars}</div>
+          <div class="stat-label">Total Stars</div>
+        </div>
+      </div>
+
+      <div class="wacky-word-card">
+        <div class="wacky-word-label">🤪 Wacky Word of the Day</div>
+        <div class="wacky-word-text" id="wackyWordText">${wacky.word}</div>
+        <div class="wacky-word-syllables" id="wackyWordSyl">${wacky.syllables}</div>
+        <div class="wacky-word-meaning" id="wackyWordMeaning">${wacky.meaning}</div>
+        <button class="wacky-word-btn" id="wackyWordBtn" onclick="revealWackyWord()">Can you read it? Click to reveal!</button>
+      </div>
+
+      <div style="margin-top:20px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+        <button class="action-btn btn-next" onclick="generateRound()">🔄 New Round</button>
+        <button class="action-btn btn-reveal" onclick="openSettings()">⚙️ Change Settings</button>
+      </div>
+    </div>
+  `;
+
+  actions.style.display = 'none';
+  info.textContent = '';
+
+  spawnConfetti(25);
+
+  // Animate wacky word reveal sequence
+  setTimeout(() => {
+    document.getElementById('wackyWordText').classList.add('visible');
+  }, 600);
+  setTimeout(() => {
+    document.getElementById('wackyWordBtn').classList.add('visible');
+  }, 1000);
+}
+
+function revealWackyWord() {
+  document.getElementById('wackyWordSyl').classList.add('visible');
+  document.getElementById('wackyWordMeaning').classList.add('visible');
+  const btn = document.getElementById('wackyWordBtn');
+  btn.textContent = '🎉 Nice work!';
+  btn.onclick = null;
+  btn.style.background = 'var(--success-pale)';
+  btn.style.borderColor = 'var(--success)';
+  btn.style.color = 'var(--success)';
+  session.stars++;
+  document.getElementById('starCount').textContent = session.stars;
+  spawnConfetti(8);
+}
+
+function resetSession() {
+  session.stars = 0;
+  document.getElementById('starCount').textContent = '0';
+  document.getElementById('actionArea').style.display = 'flex';
+  generateRound();
+}
+
+// ═══════════════════════════════════════════════════════════
+// SETTINGS
+// ═══════════════════════════════════════════════════════════
+function openSettings() { document.getElementById('settingsOverlay').classList.add('open'); }
+function closeSettings() { document.getElementById('settingsOverlay').classList.remove('open'); }
+
+function setMode(mode) {
+  session.mode = mode;
+  document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('randomSettings').style.display = mode === 'random' ? 'block' : 'none';
+  document.getElementById('customSettings').style.display = mode === 'custom' ? 'block' : 'none';
+}
+
+function toggleSylCount(el) { el.classList.toggle('active'); }
+
+function setWordCount(el) {
+  document.querySelectorAll('[data-count]').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function applySettings() {
+  session.sylCounts = [];
+  document.querySelectorAll('[data-syl].active').forEach(el => {
+    session.sylCounts.push(parseInt(el.dataset.syl));
+  });
+  if (session.sylCounts.length === 0) session.sylCounts = [2];
+
+  session.sylTypes = [];
+  document.querySelectorAll('#sylTypeToggles .toggle-pill.active').forEach(el => {
+    session.sylTypes.push(el.dataset.type);
+  });
+  if (session.sylTypes.length === 0) session.sylTypes = ['CL'];
+
+  const activeCount = document.querySelector('[data-count].active');
+  session.wordsPerRound = activeCount ? parseInt(activeCount.dataset.count) : 10;
+
+  session.showLabels = document.getElementById('toggleLabels').classList.contains('active');
+  session.showProgress = document.getElementById('toggleProgress').classList.contains('active');
+
+  closeSettings();
+  document.getElementById('actionArea').style.display = 'flex';
+  generateRound();
+}
+
+// ═══════════════════════════════════════════════════════════
+// CONFETTI
+// ═══════════════════════════════════════════════════════════
+function spawnConfetti(count) {
+  const colors = ['#e66b5d', '#f3d25b', '#d7ecf0', '#27ae60', '#6366f1'];
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti-piece';
+    el.style.left = Math.random() * 100 + 'vw';
+    el.style.top = '-10px';
+    el.style.background = colors[Math.floor(Math.random() * colors.length)];
+    el.style.width = (6 + Math.random() * 8) + 'px';
+    el.style.height = (6 + Math.random() * 8) + 'px';
+    el.style.animationDelay = (Math.random() * 0.5) + 's';
+    el.style.animationDuration = (2 + Math.random() * 1.5) + 's';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 4000);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// KEYBOARD SUPPORT
+// ═══════════════════════════════════════════════════════════
+document.addEventListener('keydown', (e) => {
+  if (document.getElementById('settingsOverlay').classList.contains('open')) return;
+  if (e.code === 'Space' || e.code === 'ArrowRight') {
+    e.preventDefault();
+    const word = session.words[session.currentIndex];
+    if (!word) return;
+    if (!session.smashed && session.revealedCount < word.syllables.length) {
+      revealNext();
+    } else if (session.revealedCount >= word.syllables.length && !session.smashed) {
+      smashWord();
+    } else if (session.smashed) {
+      nextWord();
+    }
+  }
+  if (e.code === 'ArrowLeft') {
+    e.preventDefault();
+    if (session.words[session.currentIndex]) showWord();
+  }
+});
+
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pattern Match — SSR Review Game</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Poppins', sans-serif;
+  background: #f7f9fa;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.screen { display: none; }
+.screen.active { display: block; }
+
+/* ═══════════════ NAV ═══════════════ */
+.nav-bar {
+  background: #2d2d2d;
+  padding: 12px 28px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo { color: white; font-size: 1rem; font-weight: 700; }
+.nav-logo em { font-style: normal; color: #e66b5d; }
+.nav-badge { background: #e66b5d; color: white; font-size: 0.68rem; font-weight: 700; padding: 3px 10px; border-radius: 20px; }
+
+/* ═══════════════ SETUP ═══════════════ */
+#setup-screen { max-width: 760px; margin: 0 auto; padding: 36px 24px 60px; }
+
+.setup-header { text-align: center; margin-bottom: 36px; }
+.setup-header h1 { font-size: 2.4rem; font-weight: 900; color: #2d2d2d; line-height: 1.1; }
+.setup-header h1 em { font-style: normal; color: #e66b5d; }
+.setup-header p { color: #888; font-size: 0.92rem; margin-top: 10px; }
+
+.section-label {
+  font-size: 0.72rem; font-weight: 700; color: #888;
+  letter-spacing: 1px; text-transform: uppercase;
+  margin-bottom: 12px; margin-top: 28px;
+}
+
+.deck-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+.deck-option {
+  background: white; border: 2.5px solid #e0e0e0; border-radius: 14px;
+  padding: 18px; cursor: pointer; transition: border-color .15s, box-shadow .15s;
+  display: flex; align-items: flex-start; gap: 14px;
+}
+.deck-option:hover { border-color: #e66b5d; box-shadow: 0 4px 16px rgba(230,107,93,.15); }
+.deck-option.selected { border-color: #e66b5d; background: #fff5f4; }
+.deck-icon { font-size: 1.8rem; flex-shrink: 0; }
+.deck-name { font-weight: 700; font-size: .95rem; color: #2d2d2d; }
+.deck-desc { font-size: .75rem; color: #888; margin-top: 3px; line-height: 1.4; }
+
+.mode-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.mode-option {
+  background: white; border: 2.5px solid #e0e0e0; border-radius: 14px;
+  padding: 16px; cursor: pointer; transition: border-color .15s; text-align: center;
+}
+.mode-option:hover { border-color: #9ccfda; }
+.mode-option.selected { border-color: #9ccfda; background: #d7ecf0; }
+.mode-name { font-weight: 700; font-size: .9rem; color: #2d2d2d; }
+.mode-desc { font-size: .74rem; color: #888; margin-top: 4px; line-height: 1.35; }
+
+.start-btn {
+  display: block; width: 100%; margin-top: 28px;
+  background: #e66b5d; color: white; border: none; border-radius: 14px;
+  padding: 18px; font-family: 'Poppins', sans-serif; font-size: 1.1rem; font-weight: 700;
+  cursor: pointer; transition: background .15s, transform .1s;
+}
+.start-btn:hover:not(:disabled) { background: #c8503f; transform: translateY(-1px); }
+.start-btn:disabled { background: #ccc; cursor: not-allowed; }
+
+/* ═══════════════ GAME ═══════════════ */
+#game-screen { min-height: calc(100vh - 48px); display: flex; flex-direction: column; }
+#game-screen.active { display: flex; }
+
+.game-hud {
+  background: #2d2d2d; padding: 10px 24px;
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap; flex-shrink: 0;
+}
+.hud-pill {
+  background: rgba(255,255,255,.1); border-radius: 10px; padding: 7px 14px;
+  font-weight: 700; font-size: .88rem; color: white;
+  display: flex; align-items: center; gap: 6px;
+}
+.hud-pill.p1 { border-left: 3px solid #f3d25b; }
+.hud-pill.p2 { border-left: 3px solid #e66b5d; }
+.hud-pill .num { font-size: 1.25rem; font-weight: 900; }
+.hud-pill .lbl { color: #aaa; font-size: .75rem; }
+.hud-round { color: #aaa; font-size: .82rem; font-weight: 600; margin: 0 auto; }
+.hud-timer { color: white; font-weight: 700; font-size: .9rem; background: rgba(255,255,255,.1); border-radius: 10px; padding: 7px 14px; }
+.hud-timer.urgent { color: #e66b5d; animation: urgentBlink .6s infinite; }
+@keyframes urgentBlink { 0%,100%{opacity:1} 50%{opacity:.4} }
+.quit-btn {
+  background: none; border: 1.5px solid #555; border-radius: 10px;
+  padding: 7px 14px; font-family: 'Poppins',sans-serif; font-size: .78rem;
+  font-weight: 600; color: #aaa; cursor: pointer; transition: all .15s;
+}
+.quit-btn:hover { border-color: #e66b5d; color: #e66b5d; }
+
+/* ── Arena: always two cards side by side ── */
+.arena {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 40px;
+  padding: 28px 24px;
+  flex-wrap: nowrap;  /* never stack */
+}
+
+.card-col {
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+}
+
+.card-col-label {
+  font-size: .72rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .9px; padding: 5px 14px; border-radius: 20px;
+}
+.label-left  { background: #f3d25b; color: #2d2d2d; }
+.label-right { background: #e66b5d; color: white; }
+.label-solo  { background: #d7ecf0; color: #2d2d2d; }
+
+/* ── The circular card ── */
+.game-card {
+  border-radius: 50%;
+  background: white;
+  position: relative;
+  box-shadow: 0 6px 28px rgba(0,0,0,.1);
+  flex-shrink: 0;
+  /* size set by JS */
+}
+.card-left  { border: 5px solid #f3d25b; }
+.card-right { border: 5px solid #e66b5d; }
+.card-solo-left  { border: 5px solid #d7ecf0; }
+.card-solo-right { border: 5px solid #e66b5d; }
+
+/* flash animations */
+.flash-correct { animation: ringGreen .55s ease; }
+@keyframes ringGreen {
+  0%   { box-shadow: 0 6px 28px rgba(0,0,0,.1); }
+  40%  { box-shadow: 0 0 0 16px rgba(72,199,116,.4), 0 6px 28px rgba(0,0,0,.1); }
+  100% { box-shadow: 0 6px 28px rgba(0,0,0,.1); }
+}
+.flash-wrong { animation: shake .4s ease; }
+@keyframes shake {
+  0%,100%{transform:translateX(0)}
+  20%{transform:translateX(-8px)}
+  40%{transform:translateX(8px)}
+  60%{transform:translateX(-5px)}
+  80%{transform:translateX(5px)}
+}
+
+/* ── Tokens ── */
+.token {
+  position: absolute;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 10px;
+  font-family: 'Poppins', sans-serif; font-weight: 700;
+  white-space: nowrap; user-select: none;
+  line-height: 1.2; text-align: center;
+}
+.token.clickable { cursor: pointer; transition: transform .12s; }
+.token.clickable:hover { transform: scale(1.18) rotate(0deg) !important; z-index: 20; box-shadow: 0 4px 16px rgba(0,0,0,.2); }
+
+.token-word     { background: #d7ecf0; color: #2d2d2d; border: 2px solid #9ccfda; }
+.token-grapheme { background: #f3d25b; color: #2d2d2d; border: 2px solid #d4aa30; }
+.token-emoji    { background: white;   color: #2d2d2d; border: 2px solid #ddd; }
+.token-hf       { background: #f0e8ff; color: #5a2d9e; border: 2px solid #c4a8e8; }
+.token-pattern  { background: #ffe8e6; color: #b83e30; border: 2px solid #f4b8b2; }
+
+@keyframes tokenPop {
+  0%   { transform: scale(1) rotate(var(--rot,0deg)); }
+  45%  { transform: scale(1.55) rotate(0deg); filter: brightness(1.3); }
+  100% { transform: scale(1.2)  rotate(0deg); }
+}
+.token-pop { animation: tokenPop .5s ease forwards !important; z-index: 30 !important; }
+
+/* floating +1 */
+.point-pop {
+  position: fixed; pointer-events: none; z-index: 500;
+  font-family: 'Poppins',sans-serif; font-weight: 900; font-size: 2.2rem;
+  text-shadow: 0 2px 8px rgba(0,0,0,.2);
+  animation: floatUp .9s ease forwards;
+}
+@keyframes floatUp {
+  0%   { opacity:1; transform:translateY(0) scale(1); }
+  100% { opacity:0; transform:translateY(-90px) scale(1.3); }
+}
+
+/* hint bar */
+.hint-bar {
+  background: #2d2d2d; color: white; border-radius: 12px;
+  padding: 11px 20px; margin-top: 18px; font-size: .84rem;
+  display: flex; align-items: center; gap: 10px; max-width: 520px;
+}
+.hint-bar strong { color: #f3d25b; }
+
+/* ═══════════════ RESULT ═══════════════ */
+#result-screen {
+  min-height: calc(100vh - 48px);
+  background: #1a1a2e;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  padding: 40px 24px;
+}
+#result-screen.active { display: flex; }
+
+.star-bg { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.star {
+  position: absolute; background: white; border-radius: 50%;
+  animation: twinkle linear infinite;
+}
+@keyframes twinkle { 0%,100%{opacity:.1;transform:scale(1)} 50%{opacity:.8;transform:scale(1.4)} }
+
+.celebration-content {
+  position: relative; z-index: 10;
+  display: flex; flex-direction: column; align-items: center;
+  gap: 22px; max-width: 680px; width: 100%;
+}
+
+.trophy-wrap { position: relative; animation: trophyIn .8s cubic-bezier(.175,.885,.32,1.275) forwards; }
+@keyframes trophyIn { 0%{transform:scale(0) rotate(-15deg);opacity:0} 100%{transform:scale(1) rotate(0);opacity:1} }
+.trophy-emoji { font-size: 7rem; display: block; filter: drop-shadow(0 6px 20px rgba(243,210,91,.6)); }
+.trophy-glow {
+  position: absolute; inset: -20px;
+  background: radial-gradient(circle, rgba(243,210,91,.3) 0%, transparent 70%);
+  animation: glowPulse 2s ease infinite; pointer-events: none;
+}
+@keyframes glowPulse { 0%,100%{opacity:.5;transform:scale(1)} 50%{opacity:1;transform:scale(1.15)} }
+
+.winner-banner { text-align: center; animation: fadeUp .6s ease .3s both; }
+@keyframes fadeUp { 0%{opacity:0;transform:translateY(20px)} 100%{opacity:1;transform:translateY(0)} }
+.winner-label { font-size: .85rem; font-weight: 700; color: #888; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 6px; }
+.winner-name  { font-size: 2.8rem; font-weight: 900; color: white; line-height: 1.1; }
+.winner-name em { font-style: normal; color: #f3d25b; }
+.winner-sub   { font-size: 1rem; color: #aaa; margin-top: 8px; }
+
+.score-cards { display: flex; gap: 14px; width: 100%; animation: fadeUp .6s ease .5s both; }
+.score-card  {
+  flex: 1; border-radius: 16px; padding: 20px 14px; text-align: center;
+  border: 2px solid rgba(255,255,255,.1);
+}
+.score-card.sc-p1  { background: rgba(243,210,91,.15); border-color: rgba(243,210,91,.4); }
+.score-card.sc-p2  { background: rgba(230,107,93,.15); border-color: rgba(230,107,93,.4); }
+.score-card.sc-mid { background: rgba(255,255,255,.06); }
+.sc-lbl { font-size: .72rem; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: .6px; margin-bottom: 6px; }
+.sc-num { font-size: 2.4rem; font-weight: 900; color: white; }
+.sc-num.c-p1 { color: #f3d25b; }
+.sc-num.c-p2 { color: #e66b5d; }
+
+.matched-strip {
+  background: rgba(255,255,255,.07); border-radius: 16px;
+  padding: 18px 20px; width: 100%; animation: fadeUp .6s ease .7s both;
+}
+.matched-strip h3 { font-size: .72rem; font-weight: 700; color: #666; text-transform: uppercase; letter-spacing: .6px; margin-bottom: 12px; }
+.tags { display: flex; flex-wrap: wrap; gap: 8px; }
+.tag { background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.15); border-radius: 8px; padding: 4px 12px; font-size: .82rem; font-weight: 600; color: #ddd; }
+
+.play-again {
+  background: #e66b5d; color: white; border: none; border-radius: 14px;
+  padding: 15px 52px; font-family: 'Poppins',sans-serif; font-size: 1rem; font-weight: 700;
+  cursor: pointer; transition: background .15s, transform .1s;
+  animation: fadeUp .6s ease .9s both;
+}
+.play-again:hover { background: #c8503f; transform: translateY(-2px); }
+
+#fw-canvas { position: fixed; inset: 0; pointer-events: none; z-index: 5; }
+
+.confetti-el {
+  position: fixed; pointer-events: none; z-index: 200;
+  animation: cFall linear forwards;
+}
+@keyframes cFall { 0%{transform:translateY(-10px) rotate(0);opacity:1} 100%{transform:translateY(110vh) rotate(720deg);opacity:0} }
+
+/* ═══════════════ RESPONSIVE ═══════════════ */
+@media (max-width: 600px) {
+  .deck-grid { grid-template-columns: 1fr; }
+  .mode-grid  { grid-template-columns: 1fr; }
+  .arena { gap: 16px; padding: 16px 10px; }
+  .score-cards { flex-direction: column; }
+}
+</style>
+</head>
+<body>
+
+<div class="nav-bar">
+  <div class="nav-logo">Structured Steps <em>·</em> Pattern Match</div>
+  <div class="nav-badge">OGC#622</div>
+</div>
+
+<!-- ══════════════ SETUP ══════════════ -->
+<div id="setup-screen" class="screen active">
+  <div class="setup-header">
+    <h1>Find the <em>Match!</em></h1>
+    <p>Every two cards share exactly one symbol — spot it first to score a point!</p>
+  </div>
+
+  <div class="section-label">Choose a Deck</div>
+  <div class="deck-grid" id="deck-grid"></div>
+
+  <div class="section-label">Game Mode</div>
+  <div class="mode-grid">
+    <div class="mode-option selected" id="mode-solo" onclick="pickMode('solo')">
+      <div class="mode-name">🃏 Solo Practice</div>
+      <div class="mode-desc">Work through the deck — tap any match you see on either card</div>
+    </div>
+    <div class="mode-option" id="mode-versus" onclick="pickMode('versus')">
+      <div class="mode-name">⚔️ Teacher vs. Student</div>
+      <div class="mode-desc">Two players race on the same two cards — first to tap the match wins the round!</div>
+    </div>
+    <div class="mode-option" id="mode-timed" onclick="pickMode('timed')">
+      <div class="mode-name">⏱ Timed Sprint</div>
+      <div class="mode-desc">Score as many matches as you can in 90 seconds</div>
+    </div>
+  </div>
+
+  <button class="start-btn" id="start-btn" onclick="startGame()" disabled>Choose a deck to start</button>
+</div>
+
+<!-- ══════════════ GAME ══════════════ -->
+<div id="game-screen" class="screen">
+  <div class="game-hud">
+    <div class="hud-pill p1" id="hud-p1">
+      <span class="lbl" id="p1-lbl">Score</span>
+      <span class="num" id="hud-p1-num">0</span>
+    </div>
+    <div class="hud-pill p2" id="hud-p2" style="display:none">
+      <span class="lbl" id="p2-lbl">Teacher</span>
+      <span class="num" id="hud-p2-num">0</span>
+    </div>
+    <div class="hud-round" id="hud-round">Round 1 of 30</div>
+    <div class="hud-timer" id="hud-timer" style="display:none">⏱ <span id="timer-val">90</span>s</div>
+    <button class="quit-btn" onclick="quitToSetup()">✕ Quit</button>
+  </div>
+
+  <!-- Always two cards side by side -->
+  <div class="arena" id="arena">
+    <div class="card-col" id="col-left">
+      <div class="card-col-label label-solo" id="lbl-left">Card A</div>
+      <div class="game-card card-solo-left" id="card-left"></div>
+    </div>
+    <div class="card-col" id="col-right">
+      <div class="card-col-label label-solo" id="lbl-right">Your Card — tap the match!</div>
+      <div class="game-card card-solo-right" id="card-right"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ RESULT ══════════════ -->
+<div id="result-screen" class="screen">
+  <canvas id="fw-canvas"></canvas>
+  <div class="star-bg" id="star-bg"></div>
+  <div class="celebration-content">
+    <div class="trophy-wrap">
+      <div class="trophy-glow"></div>
+      <span class="trophy-emoji" id="res-trophy">🏆</span>
+    </div>
+    <div class="winner-banner">
+      <div class="winner-label" id="res-label">Winner</div>
+      <div class="winner-name"  id="res-name">Amazing!</div>
+      <div class="winner-sub"   id="res-sub">You spotted every match!</div>
+    </div>
+    <div class="score-cards" id="res-score-cards"></div>
+    <div class="matched-strip">
+      <h3>Symbols Matched This Game</h3>
+      <div class="tags" id="res-tags"></div>
+    </div>
+    <button class="play-again" onclick="showScreen('setup-screen')">Play Again</button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════
+// SPOT IT STRUCTURE — order-5 projective plane
+// 31 cards, 6 symbols each, exactly 1 shared between any two
+// ═══════════════════════════════════════
+const STRUCTURE = [
+  [1,6,11,16,21,26],[0,6,7,8,9,10],[5,6,15,19,23,27],[3,6,13,20,22,29],
+  [4,6,14,17,25,28],[2,6,12,18,24,30],[0,1,2,3,4,5],[1,10,15,20,25,30],
+  [1,8,13,18,23,28],[1,9,14,19,24,29],[1,7,12,17,22,27],[0,26,27,28,29,30],
+  [5,10,14,18,22,26],[3,8,15,17,24,26],[4,9,12,20,23,26],[2,7,13,19,25,26],
+  [0,16,17,18,19,20],[4,10,13,16,24,27],[5,8,12,16,25,29],[2,9,15,16,22,28],
+  [3,7,14,16,23,30],[0,21,22,23,24,25],[3,10,12,19,21,28],[2,8,14,20,21,27],
+  [5,9,13,17,21,30],[4,7,15,18,21,29],[0,11,12,13,14,15],[2,10,11,17,23,29],
+  [4,8,11,19,22,30],[3,9,11,18,25,27],[5,7,11,20,24,28]
+];
+
+const DECKS = {
+  ssr3: {
+    name: "SSR Unit 3", icon: "📖",
+    desc: "Welded sounds, FLOSS, tch/dge, closed syllables, suffixes",
+    symbols: [
+      {t:"all",    cls:"token-word"},     {t:"ank",    cls:"token-grapheme"},
+      {t:"ink",    cls:"token-grapheme"}, {t:"ang",    cls:"token-grapheme"},
+      {t:"ing",    cls:"token-grapheme"}, {t:"ong",    cls:"token-grapheme"},
+      {t:"unk",    cls:"token-grapheme"}, {t:"cliff",  cls:"token-word"},
+      {t:"well",   cls:"token-word"},     {t:"dress",  cls:"token-word"},
+      {t:"jazz",   cls:"token-word"},     {t:"shell",  cls:"token-word"},
+      {t:"sniff",  cls:"token-word"},     {t:"catch",  cls:"token-pattern"},
+      {t:"witch",  cls:"token-pattern"},  {t:"pitch",  cls:"token-pattern"},
+      {t:"badge",  cls:"token-pattern"},  {t:"ledge",  cls:"token-pattern"},
+      {t:"-ing",   cls:"token-grapheme"}, {t:"-ed",    cls:"token-grapheme"},
+      {t:"-es",    cls:"token-grapheme"}, {t:"-s",     cls:"token-grapheme"},
+      {t:"1-1-1",  cls:"token-pattern"},  {t:"rabbit", cls:"token-word"},
+      {t:"button", cls:"token-word"},     {t:"magnet", cls:"token-word"},
+      {t:"napkin", cls:"token-word"},     {t:"his",    cls:"token-hf"},
+      {t:"was",    cls:"token-hf"},       {t:"has",    cls:"token-hf"},
+      {t:"schwa",  cls:"token-pattern"},
+    ]
+  },
+  hf: {
+    name: "High-Frequency Words", icon: "⚡",
+    desc: "Sight words — read them instantly!",
+    symbols: [
+      {t:"the",  cls:"token-hf"},{t:"of",   cls:"token-hf"},{t:"and",  cls:"token-hf"},
+      {t:"a",    cls:"token-hf"},{t:"to",   cls:"token-hf"},{t:"in",   cls:"token-hf"},
+      {t:"is",   cls:"token-hf"},{t:"it",   cls:"token-hf"},{t:"you",  cls:"token-hf"},
+      {t:"that", cls:"token-hf"},{t:"he",   cls:"token-hf"},{t:"was",  cls:"token-hf"},
+      {t:"for",  cls:"token-hf"},{t:"on",   cls:"token-hf"},{t:"are",  cls:"token-hf"},
+      {t:"as",   cls:"token-hf"},{t:"with", cls:"token-hf"},{t:"his",  cls:"token-hf"},
+      {t:"they", cls:"token-hf"},{t:"I",    cls:"token-hf"},{t:"at",   cls:"token-hf"},
+      {t:"be",   cls:"token-hf"},{t:"this", cls:"token-hf"},{t:"have", cls:"token-hf"},
+      {t:"from", cls:"token-hf"},{t:"or",   cls:"token-hf"},{t:"one",  cls:"token-hf"},
+      {t:"had",  cls:"token-hf"},{t:"by",   cls:"token-hf"},{t:"word", cls:"token-hf"},
+      {t:"but",  cls:"token-hf"},
+    ]
+  },
+  animals: {
+    name: "Animal Fun 🐾", icon: "🐾",
+    desc: "A fun emoji deck — great warm-up or brain break!",
+    symbols: [
+      {t:"🐶",cls:"token-emoji"},{t:"🐱",cls:"token-emoji"},{t:"🐭",cls:"token-emoji"},
+      {t:"🐹",cls:"token-emoji"},{t:"🐰",cls:"token-emoji"},{t:"🦊",cls:"token-emoji"},
+      {t:"🐻",cls:"token-emoji"},{t:"🐼",cls:"token-emoji"},{t:"🐨",cls:"token-emoji"},
+      {t:"🐯",cls:"token-emoji"},{t:"🦁",cls:"token-emoji"},{t:"🐮",cls:"token-emoji"},
+      {t:"🐷",cls:"token-emoji"},{t:"🐸",cls:"token-emoji"},{t:"🐵",cls:"token-emoji"},
+      {t:"🐔",cls:"token-emoji"},{t:"🐧",cls:"token-emoji"},{t:"🐦",cls:"token-emoji"},
+      {t:"🦆",cls:"token-emoji"},{t:"🦅",cls:"token-emoji"},{t:"🦉",cls:"token-emoji"},
+      {t:"🦋",cls:"token-emoji"},{t:"🐝",cls:"token-emoji"},{t:"🐛",cls:"token-emoji"},
+      {t:"🐌",cls:"token-emoji"},{t:"🐞",cls:"token-emoji"},{t:"🐜",cls:"token-emoji"},
+      {t:"🦀",cls:"token-emoji"},{t:"🐙",cls:"token-emoji"},{t:"🦑",cls:"token-emoji"},
+      {t:"🦈",cls:"token-emoji"},
+    ]
+  },
+  morphemes: {
+    name: "Morpheme Mix", icon: "🔤",
+    desc: "Prefixes, suffixes, base words — morphological awareness!",
+    symbols: [
+      {t:"run",    cls:"token-word"},    {t:"jump",   cls:"token-word"},
+      {t:"help",   cls:"token-word"},    {t:"play",   cls:"token-word"},
+      {t:"fix",    cls:"token-word"},    {t:"wash",   cls:"token-word"},
+      {t:"re-",    cls:"token-pattern"}, {t:"un-",    cls:"token-pattern"},
+      {t:"pre-",   cls:"token-pattern"}, {t:"mis-",   cls:"token-pattern"},
+      {t:"-ful",   cls:"token-grapheme"},{t:"-less",  cls:"token-grapheme"},
+      {t:"-ness",  cls:"token-grapheme"},{t:"-ment",  cls:"token-grapheme"},
+      {t:"-er",    cls:"token-grapheme"},{t:"-est",   cls:"token-grapheme"},
+      {t:"-ly",    cls:"token-grapheme"},{t:"-ing",   cls:"token-grapheme"},
+      {t:"-ed",    cls:"token-grapheme"},{t:"-s",     cls:"token-grapheme"},
+      {t:"base",   cls:"token-hf"},      {t:"root",   cls:"token-hf"},
+      {t:"prefix", cls:"token-hf"},      {t:"suffix", cls:"token-hf"},
+      {t:"kind",   cls:"token-word"},    {t:"hope",   cls:"token-word"},
+      {t:"dark",   cls:"token-word"},    {t:"soft",   cls:"token-word"},
+      {t:"quick",  cls:"token-word"},    {t:"slow",   cls:"token-word"},
+      {t:"bright", cls:"token-word"},
+    ]
+  }
+};
+
+// ═══════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════
+const G = {
+  deckKey: null, mode: 'solo',
+  cards: [], leftPos: 0, rightPos: 1,
+  p1Score: 0, p2Score: 0, score: 0,
+  attempts: 0, matched: [],
+  timerInterval: null, timeLeft: 90,
+  live: false, locked: false
+};
+
+// ═══════════════════════════════════════
+// SETUP
+// ═══════════════════════════════════════
+function buildDeckGrid() {
+  const grid = document.getElementById('deck-grid');
+  grid.innerHTML = '';
+  Object.entries(DECKS).forEach(([key, deck]) => {
+    const d = document.createElement('div');
+    d.className = 'deck-option';
+    d.id = 'deck-' + key;
+    d.innerHTML = `<div class="deck-icon">${deck.icon}</div>
+      <div><div class="deck-name">${deck.name}</div><div class="deck-desc">${deck.desc}</div></div>`;
+    d.addEventListener('click', () => pickDeck(key));
+    grid.appendChild(d);
+  });
+}
+
+function pickDeck(key) {
+  G.deckKey = key;
+  document.querySelectorAll('.deck-option').forEach(d => d.classList.remove('selected'));
+  document.getElementById('deck-' + key).classList.add('selected');
+  const btn = document.getElementById('start-btn');
+  btn.disabled = false;
+  btn.textContent = 'Start — ' + DECKS[key].name;
+}
+
+function pickMode(mode) {
+  G.mode = mode;
+  ['solo','versus','timed'].forEach(m =>
+    document.getElementById('mode-' + m).classList.toggle('selected', m === mode)
+  );
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if (id === 'setup-screen') {
+    G.deckKey = null; G.mode = 'solo'; G.live = false;
+    document.querySelectorAll('.deck-option').forEach(d => d.classList.remove('selected'));
+    const btn = document.getElementById('start-btn');
+    btn.disabled = true; btn.textContent = 'Choose a deck to start';
+    ['solo','versus','timed'].forEach(m =>
+      document.getElementById('mode-'+m).classList.toggle('selected', m==='solo')
+    );
+    if (G.timerInterval) clearInterval(G.timerInterval);
+    stopFireworks();
+  }
+}
+
+// ═══════════════════════════════════════
+// START
+// ═══════════════════════════════════════
+function startGame() {
+  if (!G.deckKey) return;
+
+  const idx = Array.from({length:31},(_,i)=>i);
+  shuffle(idx);
+  G.cards = idx.map(si => ({ si, order: shuffle([...STRUCTURE[si]]) }));
+
+  G.leftPos = 0; G.rightPos = 1;
+  G.p1Score = 0; G.p2Score = 0;
+  G.score   = 0; G.attempts = 0; G.matched = [];
+  G.live    = true; G.locked = false;
+
+  // HUD labels
+  const isVs = G.mode === 'versus';
+  document.getElementById('p1-lbl').textContent = isVs ? '🧒 Student' : 'Score';
+  document.getElementById('hud-p2').style.display = isVs ? 'flex' : 'none';
+  document.getElementById('hud-p1-num').textContent = '0';
+  document.getElementById('hud-p2-num').textContent = '0';
+
+  // Card labels & borders
+  const lblL  = document.getElementById('lbl-left');
+  const lblR  = document.getElementById('lbl-right');
+  const cardL = document.getElementById('card-left');
+  const cardR = document.getElementById('card-right');
+
+  if (isVs) {
+    lblL.textContent = '🧒 Student';
+    lblL.className   = 'card-col-label label-left';
+    lblR.textContent = '👩‍🏫 Teacher';
+    lblR.className   = 'card-col-label label-right';
+    cardL.className  = 'game-card card-left';
+    cardR.className  = 'game-card card-right';
+  } else {
+    lblL.textContent = 'Card A';
+    lblL.className   = 'card-col-label label-solo';
+    lblR.textContent = 'Your Card — tap the match!';
+    lblR.className   = 'card-col-label label-solo';
+    cardL.className  = 'game-card card-solo-left';
+    cardR.className  = 'game-card card-solo-right';
+  }
+
+  // Timer
+  if (G.mode === 'timed') {
+    G.timeLeft = 90;
+    const tel = document.getElementById('hud-timer');
+    tel.style.display = 'block';
+    tel.classList.remove('urgent');
+    document.getElementById('timer-val').textContent = 90;
+    G.timerInterval = setInterval(() => {
+      G.timeLeft--;
+      document.getElementById('timer-val').textContent = G.timeLeft;
+      if (G.timeLeft <= 10) document.getElementById('hud-timer').classList.add('urgent');
+      if (G.timeLeft <= 0)  endGame();
+    }, 1000);
+  } else {
+    document.getElementById('hud-timer').style.display = 'none';
+    if (G.timerInterval) clearInterval(G.timerInterval);
+  }
+
+  showScreen('game-screen');
+  renderRound();
+}
+
+// ═══════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════
+function cardSize() {
+  // Fit two circles side by side with a gap, leaving room for labels
+  const vw = Math.min(window.innerWidth, 900);
+  const avail = vw - 40 - 40; // padding + gap
+  return Math.max(Math.min(Math.floor(avail / 2), 360), 180);
+}
+
+function renderRound() {
+  updateHUD();
+  const syms = DECKS[G.deckKey].symbols;
+  const sz   = cardSize();
+
+  const isVs   = G.mode === 'versus';
+  // In versus: both cards clickable by either player
+  // In solo/timed: left card not clickable, right card clickable
+  renderCard('card-left',  G.cards[G.leftPos],  syms, sz, isVs ? 'both' : false);
+  renderCard('card-right', G.cards[G.rightPos], syms, sz, true);
+}
+
+function renderCard(elId, cardData, symbols, sz, clickable) {
+  const el = document.getElementById(elId);
+  el.style.width  = sz + 'px';
+  el.style.height = sz + 'px';
+  el.innerHTML = '';
+
+  const R     = sz / 2;
+  // Tight radius so tokens nearly fill the circle
+  const ringR = R * 0.63;
+  const positions = circlePositions(6, ringR);
+
+  cardData.order.forEach((symIdx, i) => {
+    const sym = symbols[symIdx];
+    if (!sym) return;
+
+    const token = document.createElement('div');
+    token.className  = 'token ' + sym.cls;
+    token.dataset.idx = symIdx;
+
+    const isEmoji = sym.cls === 'token-emoji';
+    const len = (sym.t || '').length;
+
+    // Token size: bigger relative to card
+    const tW = isEmoji ? Math.round(sz * 0.21)
+             : len >= 7 ? Math.round(sz * 0.27)
+             : len >= 5 ? Math.round(sz * 0.24)
+             : len <= 2 ? Math.round(sz * 0.19)
+             : Math.round(sz * 0.22);
+    const tH = isEmoji ? Math.round(sz * 0.21) : Math.round(sz * 0.14);
+
+    // Font size scales with card
+    const fS = isEmoji ? Math.round(sz * 0.095) + 'px'
+             : len >= 7 ? Math.round(sz * 0.054) + 'px'
+             : len >= 5 ? Math.round(sz * 0.064) + 'px'
+             : len <= 2 ? Math.round(sz * 0.085) + 'px'
+             : Math.round(sz * 0.072) + 'px';
+
+    const rot = (Math.random() * 26 - 13).toFixed(1);
+    const cx  = Math.round(R + positions[i].x - tW / 2);
+    const cy  = Math.round(R + positions[i].y - tH / 2);
+
+    token.style.cssText = [
+      `left:${cx}px`, `top:${cy}px`,
+      `width:${tW}px`, `height:${tH}px`,
+      `font-size:${fS}`,
+      `transform:rotate(${rot}deg)`,
+      `--rot:${rot}deg`,
+      `padding:2px 4px`
+    ].join(';');
+    token.textContent = sym.t;
+
+    if (clickable) {
+      token.classList.add('clickable');
+      token.addEventListener('click', e => {
+        e.stopPropagation();
+        // In versus: score goes to whoever's card was clicked
+        const side = (elId === 'card-left') ? 'p1' : 'p2';
+        handleClick(symIdx, token, el, side);
+      });
+    }
+    el.appendChild(token);
+  });
+}
+
+function circlePositions(n, r) {
+  // 1 centre + 5 around ring
+  const out = [{x:0, y:0}];
+  for (let i = 0; i < 5; i++) {
+    const a = (i / 5) * Math.PI * 2 - Math.PI / 2;
+    out.push({ x: Math.cos(a) * r, y: Math.sin(a) * r });
+  }
+  return shuffle(out);
+}
+
+// ═══════════════════════════════════════
+// CLICK
+// ═══════════════════════════════════════
+function handleClick(symIdx, tokenEl, cardEl, side) {
+  if (!G.live || G.locked) return;
+
+  G.attempts++;
+
+  // Find the one symbol shared between the two current cards
+  const leftSyms  = new Set(G.cards[G.leftPos].order);
+  const rightSyms = new Set(G.cards[G.rightPos].order);
+  const match     = [...leftSyms].find(s => rightSyms.has(s));
+
+  if (symIdx === match) {
+    G.locked = true;
+    G.live   = false;
+
+    const sym = DECKS[G.deckKey].symbols[symIdx];
+    G.matched.push(sym ? sym.t : String(symIdx));
+
+    // Score
+    if (G.mode === 'versus') {
+      if (side === 'p1') { G.p1Score++; document.getElementById('hud-p1-num').textContent = G.p1Score; }
+      else               { G.p2Score++; document.getElementById('hud-p2-num').textContent = G.p2Score; }
+    } else {
+      G.score++; document.getElementById('hud-p1-num').textContent = G.score;
+    }
+
+    // Highlight match on both cards
+    popToken(tokenEl);
+    highlightOnCard('card-left',  symIdx);
+    highlightOnCard('card-right', symIdx);
+
+    cardEl.classList.add('flash-correct');
+    spawnPointPop(cardEl, side === 'p1' ? '#48c774' : '#f3d25b');
+    spawnConfetti(7);
+
+    setTimeout(() => {
+      cardEl.classList.remove('flash-correct');
+      advance();
+    }, 700);
+
+  } else {
+    cardEl.classList.add('flash-wrong');
+    setTimeout(() => cardEl.classList.remove('flash-wrong'), 420);
+  }
+}
+
+function highlightOnCard(cardId, symIdx) {
+  document.getElementById(cardId).querySelectorAll('.token').forEach(t => {
+    if (parseInt(t.dataset.idx) === symIdx) popToken(t);
+  });
+}
+
+function popToken(el) { el.classList.add('token-pop'); }
+
+function spawnPointPop(cardEl, color) {
+  const r = cardEl.getBoundingClientRect();
+  const el = document.createElement('div');
+  el.className = 'point-pop';
+  el.textContent = '+1';
+  el.style.cssText = `left:${r.left + r.width/2 - 20}px;top:${r.top + 20}px;color:${color}`;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1000);
+}
+
+function advance() {
+  G.leftPos  = G.rightPos;
+  G.rightPos++;
+  if (G.rightPos >= G.cards.length) { endGame(); return; }
+  G.live = true; G.locked = false;
+  renderRound();
+}
+
+function updateHUD() {
+  const total = G.cards.length - 1;
+  document.getElementById('hud-round').textContent = `Round ${G.rightPos} of ${total}`;
+}
+
+// ═══════════════════════════════════════
+// END
+// ═══════════════════════════════════════
+function endGame() {
+  G.live = false;
+  if (G.timerInterval) clearInterval(G.timerInterval);
+
+  const acc = G.attempts > 0 ? Math.round((G.score / G.attempts) * 100) : 100;
+
+  let trophy, label, name, sub;
+  if (G.mode === 'versus') {
+    const p1 = G.p1Score, p2 = G.p2Score;
+    if      (p1 > p2) { trophy='🏆'; label='Winner!';    name='🧒 Student wins!';    sub=`${p1} – ${p2}`; }
+    else if (p2 > p1) { trophy='🏆'; label='Winner!';    name='👩‍🏫 Teacher wins!';   sub=`${p2} – ${p1}`; }
+    else              { trophy='🤝'; label="It's a tie!"; name='Both played great!'; sub=`${p1} – ${p2}`; }
+  } else {
+    const s = G.score;
+    if      (s >= 22) { trophy='🏆'; label='Perfect!';      name='You\'re on <em>fire!</em>';   sub='Incredible pattern recognition!'; }
+    else if (s >= 16) { trophy='⭐'; label='Amazing Work!'; name='You <em>crushed it!</em>';     sub='Super fast spotting!'; }
+    else if (s >= 10) { trophy='🎉'; label='Great Job!';    name='You <em>did it!</em>';         sub='Keep practising — you\'re getting faster!'; }
+    else              { trophy='👏'; label='Nice Try!';      name='Good effort!';                 sub='Play again to beat your score!'; }
+  }
+
+  document.getElementById('res-trophy').textContent = trophy;
+  document.getElementById('res-label').textContent  = label;
+  document.getElementById('res-name').innerHTML     = name;
+  document.getElementById('res-sub').textContent    = sub;
+
+  const sc = document.getElementById('res-score-cards');
+  if (G.mode === 'versus') {
+    sc.innerHTML = `
+      <div class="score-card sc-p1"><div class="sc-lbl">🧒 Student</div><div class="sc-num c-p1">${G.p1Score}</div></div>
+      <div class="score-card sc-mid"><div class="sc-lbl">Rounds</div><div class="sc-num">${G.rightPos-1}</div></div>
+      <div class="score-card sc-p2"><div class="sc-lbl">👩‍🏫 Teacher</div><div class="sc-num c-p2">${G.p2Score}</div></div>`;
+  } else {
+    sc.innerHTML = `
+      <div class="score-card sc-p1"><div class="sc-lbl">Points</div><div class="sc-num c-p1">${G.score}</div></div>
+      <div class="score-card sc-mid"><div class="sc-lbl">Rounds</div><div class="sc-num">${G.rightPos-1}</div></div>
+      <div class="score-card sc-mid"><div class="sc-lbl">Accuracy</div><div class="sc-num">${acc}%</div></div>`;
+  }
+
+  const tagsEl = document.getElementById('res-tags');
+  tagsEl.innerHTML = '';
+  [...new Set(G.matched)].slice(0,28).forEach(w => {
+    const t = document.createElement('div'); t.className='tag'; t.textContent=w; tagsEl.appendChild(t);
+  });
+
+  buildStars();
+  showScreen('result-screen');
+  setTimeout(() => { startFireworks(); spawnConfetti(60); }, 300);
+}
+
+function quitToSetup() {
+  if (G.timerInterval) clearInterval(G.timerInterval);
+  G.live = false; stopFireworks();
+  showScreen('setup-screen');
+}
+
+// ═══════════════════════════════════════
+// STARS + FIREWORKS
+// ═══════════════════════════════════════
+function buildStars() {
+  const bg = document.getElementById('star-bg'); bg.innerHTML = '';
+  for (let i = 0; i < 80; i++) {
+    const s = document.createElement('div'); s.className = 'star';
+    const sz = 1 + Math.random() * 3;
+    s.style.cssText = `width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*100}%;animation-duration:${1.5+Math.random()*3}s;animation-delay:${Math.random()*3}s`;
+    bg.appendChild(s);
+  }
+}
+
+let fwAnim = null;
+const fwParts = [];
+
+function startFireworks() {
+  const canvas = document.getElementById('fw-canvas');
+  canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+  const ctx = canvas.getContext('2d');
+  const cols = ['#e66b5d','#f3d25b','#d7ecf0','#48c774','#ff69b4','#a78bfa','#38bdf8'];
+
+  function launch() {
+    if (!document.getElementById('result-screen').classList.contains('active')) return;
+    const x = 100 + Math.random() * (canvas.width - 200);
+    const y = 60  + Math.random() * (canvas.height * 0.5);
+    const col = cols[Math.floor(Math.random() * cols.length)];
+    const n = 28 + Math.floor(Math.random() * 18);
+    for (let i = 0; i < n; i++) {
+      const a = (i/n) * Math.PI * 2;
+      const sp = 2.5 + Math.random() * 3.5;
+      fwParts.push({ x, y, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp, col, life:1,
+        decay:0.012+Math.random()*0.01, sz:3+Math.random()*3, g:0.06 });
+    }
+    setTimeout(launch, 700 + Math.random() * 800);
+  }
+  launch();
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (let i = fwParts.length - 1; i >= 0; i--) {
+      const p = fwParts[i];
+      p.x += p.vx; p.y += p.vy; p.vy += p.g;
+      p.vx *= 0.97; p.vy *= 0.97; p.life -= p.decay;
+      if (p.life <= 0) { fwParts.splice(i, 1); continue; }
+      ctx.globalAlpha = p.life; ctx.fillStyle = p.col;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.sz * p.life, 0, Math.PI*2); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    fwAnim = requestAnimationFrame(draw);
+  }
+  draw();
+}
+
+function stopFireworks() {
+  if (fwAnim) { cancelAnimationFrame(fwAnim); fwAnim = null; }
+  fwParts.length = 0;
+  const ctx = document.getElementById('fw-canvas').getContext('2d');
+  ctx.clearRect(0, 0, 9999, 9999);
+}
+
+// ═══════════════════════════════════════
+// CONFETTI
+// ═══════════════════════════════════════
+function spawnConfetti(n) {
+  const cols = ['#e66b5d','#f3d25b','#d7ecf0','#48c774','#ff69b4','#a78bfa'];
+  for (let i = 0; i < n; i++) {
+    const el = document.createElement('div'); el.className = 'confetti-el';
+    el.style.cssText = `left:${5+Math.random()*90}%;top:${-20+Math.random()*10}px;background:${cols[i%cols.length]};animation-duration:${0.9+Math.random()*1.4}s;animation-delay:${Math.random()*0.3}s;width:${6+Math.random()*8}px;height:${6+Math.random()*8}px;border-radius:${Math.random()>.5?'50%':'2px'}`;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 2800);
+  }
+}
+
+// ═══════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════
+function shuffle(arr) {
+  for (let i = arr.length-1; i > 0; i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]] = [arr[j],arr[i]];
+  }
+  return arr;
+}
+
+// ═══════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════
+buildDeckGrid();
+window.addEventListener('resize', () => {
+  if (document.getElementById('game-screen').classList.contains('active')) renderRound();
+  if (document.getElementById('result-screen').classList.contains('active')) {
+    const c = document.getElementById('fw-canvas');
+    c.width = window.innerWidth; c.height = window.innerHeight;
+  }
+});
+</script>
+</body>
+</html>

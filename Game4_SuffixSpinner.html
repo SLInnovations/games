@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Suffix Spinner — SSR</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700;800&family=Quicksand:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #fff9f0;
+    --coral: #e66b5d;
+    --blue: #4a9aab;
+    --yellow: #f3d25b;
+    --green: #52b788;
+    --purple: #9b72cf;
+    --dark: #2d2d2d;
+    --mid: #777;
+    --light: #f0ede6;
+    --card: #ffffff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Quicksand', sans-serif;
+    background: var(--bg);
+    color: var(--dark);
+    min-height: 100vh;
+  }
+
+  header {
+    background: linear-gradient(135deg, #9b72cf, #6a4db8);
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  header h1 {
+    font-family: 'Baloo 2', cursive;
+    font-size: 1.8rem;
+    color: white;
+    font-weight: 800;
+  }
+  .pts-display {
+    font-family: 'Baloo 2', cursive;
+    font-size: 1.2rem;
+    color: rgba(255,255,255,0.9);
+    background: rgba(255,255,255,0.15);
+    padding: 6px 18px;
+    border-radius: 30px;
+  }
+
+  .main-layout {
+    display: flex;
+    gap: 24px;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 24px 16px;
+    align-items: flex-start;
+  }
+
+  /* SPINNER */
+  .spinner-section {
+    flex: 0 0 280px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+  .wheel-container {
+    position: relative;
+    width: 260px;
+    height: 260px;
+  }
+  #spin-canvas {
+    width: 260px;
+    height: 260px;
+    border-radius: 50%;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+  }
+  .wheel-pointer {
+    position: absolute;
+    top: -18px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 14px solid transparent;
+    border-right: 14px solid transparent;
+    border-top: 28px solid var(--dark);
+    filter: drop-shadow(0 3px 6px rgba(0,0,0,0.3));
+  }
+  .wheel-center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 36px;
+    height: 36px;
+    background: white;
+    border-radius: 50%;
+    border: 4px solid var(--dark);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+
+  .spin-btn {
+    font-family: 'Baloo 2', cursive;
+    font-size: 1.4rem;
+    font-weight: 800;
+    padding: 14px 44px;
+    border-radius: 50px;
+    border: none;
+    background: linear-gradient(135deg, #9b72cf, #6a4db8);
+    color: white;
+    cursor: pointer;
+    box-shadow: 0 6px 0 #4a308a;
+    transition: all 0.15s;
+    letter-spacing: 0.03em;
+  }
+  .spin-btn:hover:not(:disabled) { transform: translateY(-3px); box-shadow: 0 9px 0 #4a308a; }
+  .spin-btn:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 4px 0 #4a308a; }
+  .spin-btn:disabled { opacity: 0.5; cursor: default; }
+
+  .landed-suffix {
+    font-family: 'Baloo 2', cursive;
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: var(--purple);
+    min-height: 44px;
+    text-align: center;
+  }
+
+  /* GAME AREA */
+  .game-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* BASE WORD DISPLAY */
+  .base-card {
+    background: var(--card);
+    border-radius: 20px;
+    padding: 20px 24px;
+    border: 2px solid #e8e0d4;
+    text-align: center;
+  }
+  .base-label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--mid);
+    margin-bottom: 6px;
+  }
+  .base-word {
+    font-family: 'Baloo 2', cursive;
+    font-size: 2.6rem;
+    font-weight: 800;
+    color: var(--dark);
+    line-height: 1.1;
+  }
+  .equation-display {
+    font-family: 'Baloo 2', cursive;
+    font-size: 1.4rem;
+    color: var(--mid);
+    margin-top: 6px;
+    min-height: 30px;
+  }
+  .equation-display .eq-suf { color: var(--purple); font-weight: 800; }
+  .equation-display .eq-eq { color: var(--dark); }
+
+  /* RULE REMINDER */
+  .rule-card {
+    background: linear-gradient(135deg, #f0e8f8, #e8ddf5);
+    border-radius: 16px;
+    padding: 14px 18px;
+    border: 1.5px solid #c9a8e0;
+    font-size: 0.84rem;
+    color: #5a3a8a;
+    line-height: 1.7;
+  }
+  .rule-card strong { font-weight: 700; }
+
+  /* ANSWER INPUT */
+  .answer-card {
+    background: var(--card);
+    border-radius: 20px;
+    padding: 20px 24px;
+    border: 2px solid #e8e0d4;
+  }
+  .answer-label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--mid);
+    margin-bottom: 10px;
+  }
+  .answer-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+  .answer-input {
+    flex: 1;
+    font-family: 'Baloo 2', cursive;
+    font-size: 1.5rem;
+    padding: 10px 16px;
+    border-radius: 12px;
+    border: 2.5px solid #ddd;
+    outline: none;
+    transition: border-color 0.2s;
+    color: var(--dark);
+    background: var(--bg);
+  }
+  .answer-input:focus { border-color: var(--purple); }
+  .answer-input.correct { border-color: var(--green); background: #e8f8ef; }
+  .answer-input.wrong { border-color: var(--coral); background: #fde8e8; }
+
+  .check-btn {
+    font-family: 'Baloo 2', cursive;
+    font-size: 1rem;
+    font-weight: 800;
+    padding: 11px 24px;
+    border-radius: 12px;
+    border: none;
+    background: var(--purple);
+    color: white;
+    cursor: pointer;
+    box-shadow: 0 4px 0 #4a308a;
+    transition: all 0.12s;
+    white-space: nowrap;
+  }
+  .check-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 0 #4a308a; }
+
+  .feedback-line {
+    min-height: 28px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    margin-top: 8px;
+    color: var(--green);
+  }
+  .feedback-line.wrong { color: var(--coral); }
+
+  /* RULE QUESTION */
+  .rule-question-card {
+    background: var(--card);
+    border-radius: 20px;
+    padding: 18px 24px;
+    border: 2px solid #e8e0d4;
+    display: none;
+  }
+  .rule-question-card.show { display: block; }
+  .rq-label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--mid);
+    margin-bottom: 10px;
+  }
+  .rule-choices {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .rule-choice {
+    font-family: 'Quicksand', sans-serif;
+    font-weight: 700;
+    font-size: 0.85rem;
+    padding: 8px 18px;
+    border-radius: 30px;
+    border: 2px solid #ddd;
+    background: var(--bg);
+    cursor: pointer;
+    transition: all 0.12s;
+    color: var(--dark);
+  }
+  .rule-choice:hover { border-color: var(--purple); color: var(--purple); }
+  .rule-choice.correct-rule { border-color: var(--green); background: #e8f8ef; color: #276744; }
+  .rule-choice.wrong-rule { border-color: var(--coral); background: #fde8e8; color: #a83d2f; }
+
+  /* SCORE TRACK */
+  .score-track-card {
+    background: var(--card);
+    border-radius: 16px;
+    padding: 14px 18px;
+    border: 2px solid #e8e0d4;
+  }
+  .score-track-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--mid);
+  }
+  .pips {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .pip {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 800;
+    background: #eee;
+    color: #bbb;
+  }
+  .pip.hit { background: var(--green); color: white; }
+  .pip.miss { background: var(--coral); color: white; }
+  .pip.bonus { background: var(--yellow); color: var(--dark); }
+
+  .next-btn {
+    font-family: 'Baloo 2', cursive;
+    font-size: 1rem;
+    font-weight: 800;
+    padding: 11px 30px;
+    border-radius: 12px;
+    border: none;
+    background: var(--green);
+    color: white;
+    cursor: pointer;
+    box-shadow: 0 4px 0 #2d8059;
+    transition: all 0.12s;
+    display: none;
+    margin-top: 10px;
+  }
+  .next-btn:hover { transform: translateY(-2px); }
+  .next-btn.show { display: block; }
+
+  @media (max-width: 640px) {
+    .main-layout { flex-direction: column; align-items: center; }
+    .spinner-section { flex: 0 0 auto; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🎡 Suffix Spinner</h1>
+  <div class="pts-display">⭐ <span id="pts-total">0</span> pts</div>
+</header>
+
+<div class="main-layout">
+
+  <!-- SPINNER -->
+  <div class="spinner-section">
+    <div class="wheel-container">
+      <div class="wheel-pointer"></div>
+      <canvas id="spin-canvas" width="260" height="260"></canvas>
+      <div class="wheel-center"></div>
+    </div>
+    <div class="landed-suffix" id="landed-suffix"></div>
+    <button class="spin-btn" id="spin-btn" onclick="spinWheel()">🎡 Spin!</button>
+  </div>
+
+  <!-- GAME -->
+  <div class="game-area">
+
+    <div class="base-card">
+      <div class="base-label">Base Word</div>
+      <div class="base-word" id="base-word">—</div>
+      <div class="equation-display" id="equation-display"></div>
+    </div>
+
+    <div class="rule-card" id="rule-hint" style="display:none;"></div>
+
+    <div class="answer-card" id="answer-card" style="display:none;">
+      <div class="answer-label">Build the Word</div>
+      <div class="answer-row">
+        <input class="answer-input" type="text" id="answer-input" placeholder="type the built word..." autocomplete="off" autocapitalize="off" spellcheck="false" onkeydown="if(event.key==='Enter')checkAnswer()">
+        <button class="check-btn" onclick="checkAnswer()">Check ✓</button>
+      </div>
+      <div class="feedback-line" id="feedback-line"></div>
+      <button class="next-btn" id="next-btn" onclick="nextTurn()">Next Spin →</button>
+    </div>
+
+    <div class="rule-question-card" id="rule-question-card">
+      <div class="rq-label">💬 Which rule did you use?</div>
+      <div class="rule-choices" id="rule-choices"></div>
+    </div>
+
+    <div class="score-track-card">
+      <div class="score-track-header">
+        <span>Round Progress</span>
+        <span id="round-label">Spin to start!</span>
+      </div>
+      <div class="pips" id="pips"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ── SUFFIXES ──
+const SUFFIXES = [
+  { label: '-ing',  color: '#e66b5d', textColor: '#fff' },
+  { label: '-ed',   color: '#4a9aab', textColor: '#fff' },
+  { label: '-ful',  color: '#9b72cf', textColor: '#fff' },
+  { label: '-less', color: '#52b788', textColor: '#fff' },
+  { label: '-er',   color: '#e8b84b', textColor: '#333' },
+  { label: '-est',  color: '#e66b5d', textColor: '#fff' },
+  { label: '-ing',  color: '#4a9aab', textColor: '#fff' },
+  { label: '-ed',   color: '#9b72cf', textColor: '#fff' },
+];
+
+// ── BASE WORDS by suffix compatibility ──
+const BASE_WORDS = {
+  '-ing': [
+    { base: 'run',   correct: 'running',  rule: '1-1-1',  display: 'Double → running' },
+    { base: 'sit',   correct: 'sitting',  rule: '1-1-1',  display: 'Double → sitting' },
+    { base: 'hop',   correct: 'hopping',  rule: '1-1-1',  display: 'Double → hopping' },
+    { base: 'swim',  correct: 'swimming', rule: '1-1-1',  display: 'Double → swimming' },
+    { base: 'skip',  correct: 'skipping', rule: '1-1-1',  display: 'Double → skipping' },
+    { base: 'make',  correct: 'making',   rule: 'Drop-e', display: 'Drop e → making' },
+    { base: 'hope',  correct: 'hoping',   rule: 'Drop-e', display: 'Drop e → hoping' },
+    { base: 'skate', correct: 'skating',  rule: 'Drop-e', display: 'Drop e → skating' },
+    { base: 'help',  correct: 'helping',  rule: 'Just add', display: 'No change → helping' },
+    { base: 'camp',  correct: 'camping',  rule: 'Just add', display: 'No change → camping' },
+    { base: 'fish',  correct: 'fishing',  rule: 'Just add', display: 'No change → fishing' },
+  ],
+  '-ed': [
+    { base: 'plan',  correct: 'planned',  rule: '1-1-1',  display: 'Double → planned' },
+    { base: 'drop',  correct: 'dropped',  rule: '1-1-1',  display: 'Double → dropped' },
+    { base: 'snap',  correct: 'snapped',  rule: '1-1-1',  display: 'Double → snapped' },
+    { base: 'smile', correct: 'smiled',   rule: 'Drop-e', display: 'Drop e → smiled' },
+    { base: 'skate', correct: 'skated',   rule: 'Drop-e', display: 'Drop e → skated' },
+    { base: 'bake',  correct: 'baked',    rule: 'Drop-e', display: 'Drop e → baked' },
+    { base: 'help',  correct: 'helped',   rule: 'Just add', display: 'No change → helped' },
+    { base: 'camp',  correct: 'camped',   rule: 'Just add', display: 'No change → camped' },
+    { base: 'fish',  correct: 'fished',   rule: 'Just add', display: 'No change → fished' },
+  ],
+  '-ful': [
+    { base: 'help',  correct: 'helpful',  rule: 'Just add', display: 'No change → helpful' },
+    { base: 'care',  correct: 'careful',  rule: 'Just add', display: 'Keep e → careful' },
+    { base: 'hope',  correct: 'hopeful',  rule: 'Just add', display: 'Keep e → hopeful' },
+    { base: 'use',   correct: 'useful',   rule: 'Just add', display: 'Keep e → useful' },
+    { base: 'skill', correct: 'skillful', rule: 'Just add', display: 'No change → skillful' },
+  ],
+  '-less': [
+    { base: 'help',  correct: 'helpless',  rule: 'Just add', display: 'No change → helpless' },
+    { base: 'care',  correct: 'careless',  rule: 'Just add', display: 'Keep e → careless' },
+    { base: 'hope',  correct: 'hopeless',  rule: 'Just add', display: 'Keep e → hopeless' },
+    { base: 'use',   correct: 'useless',   rule: 'Just add', display: 'Keep e → useless' },
+  ],
+  '-er': [
+    { base: 'run',   correct: 'runner',   rule: '1-1-1',  display: 'Double → runner' },
+    { base: 'swim',  correct: 'swimmer',  rule: '1-1-1',  display: 'Double → swimmer' },
+    { base: 'skip',  correct: 'skipper',  rule: '1-1-1',  display: 'Double → skipper' },
+    { base: 'make',  correct: 'maker',    rule: 'Drop-e', display: 'Drop e → maker' },
+    { base: 'skate', correct: 'skater',   rule: 'Drop-e', display: 'Drop e → skater' },
+    { base: 'help',  correct: 'helper',   rule: 'Just add', display: 'No change → helper' },
+    { base: 'camp',  correct: 'camper',   rule: 'Just add', display: 'No change → camper' },
+    { base: 'fast',  correct: 'faster',   rule: 'Just add', display: 'No change → faster' },
+  ],
+  '-est': [
+    { base: 'fast',  correct: 'fastest',  rule: 'Just add', display: 'No change → fastest' },
+    { base: 'cold',  correct: 'coldest',  rule: 'Just add', display: 'No change → coldest' },
+    { base: 'soft',  correct: 'softest',  rule: 'Just add', display: 'No change → softest' },
+    { base: 'big',   correct: 'biggest',  rule: '1-1-1',  display: 'Double → biggest' },
+    { base: 'hot',   correct: 'hottest',  rule: '1-1-1',  display: 'Double → hottest' },
+    { base: 'slim',  correct: 'slimmest', rule: '1-1-1',  display: 'Double → slimmest' },
+  ],
+};
+
+const RULES = ['1-1-1 Rule', 'Drop-e Rule', 'Keep-e (consonant suffix)', 'Just add — no change'];
+
+let currentSuffix = null;
+let currentBase = null;
+let spinning = false;
+let currentAngle = 0;
+let answered = false;
+let ruleAnswered = false;
+let pips = [];
+let totalPts = 0;
+let usedBases = {};
+
+function drawWheel(angle) {
+  const canvas = document.getElementById('spin-canvas');
+  const ctx = canvas.getContext('2d');
+  const cx = 130, cy = 130, r = 126;
+  const n = SUFFIXES.length;
+  const slice = (2 * Math.PI) / n;
+
+  ctx.clearRect(0, 0, 260, 260);
+
+  SUFFIXES.forEach((s, i) => {
+    const start = angle + i * slice - Math.PI / 2;
+    const end = start + slice;
+
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, r, start, end);
+    ctx.closePath();
+    ctx.fillStyle = s.color;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    const midAngle = start + slice / 2;
+    ctx.save();
+    ctx.translate(cx + (r * 0.62) * Math.cos(midAngle), cy + (r * 0.62) * Math.sin(midAngle));
+    ctx.rotate(midAngle + Math.PI / 2);
+    ctx.fillStyle = s.textColor;
+    ctx.font = 'bold 18px Baloo 2, cursive';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(s.label, 0, 0);
+    ctx.restore();
+  });
+
+  // Outer ring
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, 2 * Math.PI);
+  ctx.strokeStyle = '#2d2d2d';
+  ctx.lineWidth = 5;
+  ctx.stroke();
+}
+
+function getTopSuffix(angle) {
+  const n = SUFFIXES.length;
+  const slice = (2 * Math.PI) / n;
+  // Pointer is at top (−π/2). Find which slice is there.
+  const normalised = (((-angle) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+  const idx = Math.floor(normalised / slice) % n;
+  return SUFFIXES[idx];
+}
+
+function spinWheel() {
+  if (spinning) return;
+  spinning = true;
+  document.getElementById('spin-btn').disabled = true;
+  document.getElementById('landed-suffix').textContent = '';
+  document.getElementById('answer-card').style.display = 'none';
+  document.getElementById('rule-hint').style.display = 'none';
+  document.getElementById('rule-question-card').classList.remove('show');
+
+  const totalSpin = (Math.PI * 2 * (5 + Math.random() * 8));
+  const duration = 3000 + Math.random() * 1000;
+  const start = performance.now();
+  const startAngle = currentAngle;
+
+  function frame(now) {
+    const elapsed = now - start;
+    const progress = Math.min(elapsed / duration, 1);
+    const ease = 1 - Math.pow(1 - progress, 4);
+    currentAngle = startAngle + totalSpin * ease;
+    drawWheel(currentAngle);
+
+    if (progress < 1) {
+      requestAnimationFrame(frame);
+    } else {
+      spinning = false;
+      const landed = getTopSuffix(currentAngle);
+      currentSuffix = landed.label;
+      document.getElementById('landed-suffix').textContent = landed.label + ' !';
+      setupRound(landed.label);
+    }
+  }
+  requestAnimationFrame(frame);
+}
+
+function setupRound(suffix) {
+  const pool = BASE_WORDS[suffix] || BASE_WORDS['-ing'];
+  if (!usedBases[suffix]) usedBases[suffix] = [];
+
+  let available = pool.filter(w => !usedBases[suffix].includes(w.base));
+  if (available.length === 0) { usedBases[suffix] = []; available = pool; }
+
+  const pick = available[Math.floor(Math.random() * available.length)];
+  currentBase = pick;
+  usedBases[suffix].push(pick.base);
+  answered = false;
+  ruleAnswered = false;
+
+  document.getElementById('base-word').textContent = pick.base;
+  document.getElementById('equation-display').innerHTML =
+    `<span>${pick.base}</span> <span class="eq-suf">${suffix}</span> <span class="eq-eq">= ?</span>`;
+
+  // Rule hint
+  let hintText = '';
+  if (suffix === '-ing' || suffix === '-ed' || suffix === '-er' || suffix === '-est') {
+    hintText = '<strong>Think:</strong> Does this base word have 1 vowel + 1 consonant + 1 syllable? (1-1-1 → double) · Does it end in silent e? (Drop-e → remove e first) · Otherwise, just add!';
+  } else if (suffix === '-ful' || suffix === '-less') {
+    hintText = '<strong>Think:</strong> Does this base end in silent e? Keep it — -ful and -less start with consonants, so the e stays!';
+  }
+  const ruleCard = document.getElementById('rule-hint');
+  ruleCard.innerHTML = hintText;
+  ruleCard.style.display = hintText ? 'block' : 'none';
+
+  document.getElementById('answer-card').style.display = 'block';
+  document.getElementById('answer-input').value = '';
+  document.getElementById('answer-input').className = 'answer-input';
+  document.getElementById('feedback-line').textContent = '';
+  document.getElementById('feedback-line').className = 'feedback-line';
+  document.getElementById('next-btn').className = 'next-btn';
+  document.getElementById('answer-input').focus();
+}
+
+function checkAnswer() {
+  if (answered) return;
+  const answer = document.getElementById('answer-input').value.trim().toLowerCase();
+  if (!answer) return;
+
+  answered = true;
+  const isCorrect = answer === currentBase.correct.toLowerCase();
+  const input = document.getElementById('answer-input');
+  const feedback = document.getElementById('feedback-line');
+
+  if (isCorrect) {
+    input.className = 'answer-input correct';
+    feedback.textContent = '✓ Correct! +2 pts';
+    feedback.className = 'feedback-line';
+    totalPts += 2;
+    document.getElementById('pts-total').textContent = totalPts;
+    pips.push('hit');
+  } else {
+    input.className = 'answer-input wrong';
+    feedback.textContent = `✗ The answer is "${currentBase.correct}" — ${currentBase.display}`;
+    feedback.className = 'feedback-line wrong';
+    pips.push('miss');
+  }
+
+  renderPips();
+
+  // Show rule question
+  showRuleQuestion();
+}
+
+function showRuleQuestion() {
+  const card = document.getElementById('rule-question-card');
+  card.classList.add('show');
+  const choices = document.getElementById('rule-choices');
+  choices.innerHTML = '';
+  const correctRule = currentBase.rule;
+  const display = {
+    '1-1-1': '1-1-1 Rule (double)',
+    'Drop-e': 'Drop-e Rule',
+    'Just add': 'Just add it',
+    'Keep-e': 'Keep-e (consonant suffix)',
+  };
+
+  const allRules = ['1-1-1', 'Drop-e', 'Just add', 'Keep-e'];
+  const shuffled = allRules.sort(() => Math.random() - 0.5);
+  shuffled.forEach(r => {
+    const btn = document.createElement('button');
+    btn.className = 'rule-choice';
+    btn.textContent = display[r] || r;
+    btn.onclick = () => checkRule(r, correctRule, btn);
+    choices.appendChild(btn);
+  });
+}
+
+function checkRule(chosen, correct, btn) {
+  if (ruleAnswered) return;
+  ruleAnswered = true;
+
+  const isCorrect = chosen === correct || (chosen === 'Just add' && correct === 'Just add');
+  document.querySelectorAll('.rule-choice').forEach(b => {
+    if (b.textContent.includes(correct) || (correct === 'Just add' && b.textContent.includes('Just add'))) {
+      b.className = 'rule-choice correct-rule';
+    }
+  });
+  if (!isCorrect) btn.className = 'rule-choice wrong-rule';
+
+  if (isCorrect) {
+    totalPts += 1;
+    document.getElementById('pts-total').textContent = totalPts;
+    pips[pips.length - 1] = 'bonus';
+    renderPips();
+  }
+
+  document.getElementById('next-btn').className = 'next-btn show';
+}
+
+function nextTurn() {
+  document.getElementById('spin-btn').disabled = false;
+  document.getElementById('base-word').textContent = '—';
+  document.getElementById('equation-display').innerHTML = '';
+  document.getElementById('answer-card').style.display = 'none';
+  document.getElementById('rule-hint').style.display = 'none';
+  document.getElementById('rule-question-card').classList.remove('show');
+  document.getElementById('landed-suffix').textContent = '';
+  document.getElementById('round-label').textContent = `${pips.length} rounds done`;
+}
+
+function renderPips() {
+  const container = document.getElementById('pips');
+  container.innerHTML = '';
+  pips.forEach(p => {
+    const pip = document.createElement('div');
+    pip.className = 'pip ' + p;
+    pip.textContent = p === 'hit' ? '✓' : p === 'bonus' ? '★' : '✗';
+    container.appendChild(pip);
+  });
+  document.getElementById('round-label').textContent = `${pips.length} round${pips.length !== 1 ? 's' : ''} done`;
+}
+
+// Init
+drawWheel(0);
+</script>
+</body>
+</html>

@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Snap! — SSR Pattern Game</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --coral: #e66b5d;
+    --blue: #d7ecf0;
+    --yellow: #f3d25b;
+    --green: #52b788;
+    --purple: #9b59b6;
+    --dark: #1e1e2e;
+    --card-h: #2a2a3e;
+    --text: #f0f0f8;
+    --muted: #9090a8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--dark);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    overflow-x: hidden;
+  }
+
+  /* HEADER */
+  header {
+    width: 100%;
+    background: linear-gradient(135deg, #e66b5d 0%, #c0392b 100%);
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  header h1 {
+    font-family: 'Fredoka One', cursive;
+    font-size: 2rem;
+    letter-spacing: 0.06em;
+    color: white;
+    text-shadow: 2px 2px 0 rgba(0,0,0,0.2);
+  }
+  .score-pill {
+    background: rgba(255,255,255,0.2);
+    border-radius: 30px;
+    padding: 6px 20px;
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.1rem;
+    color: white;
+    display: flex;
+    gap: 20px;
+  }
+  .score-pill span { opacity: 0.8; font-family: 'Nunito', sans-serif; font-size: 0.85rem; }
+
+  /* SETUP SCREEN */
+  #setup-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    gap: 20px;
+    max-width: 500px;
+    margin: 0 auto;
+    text-align: center;
+  }
+  #setup-screen h2 {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.8rem;
+    color: var(--yellow);
+    margin-bottom: 6px;
+  }
+  #setup-screen p { color: var(--muted); line-height: 1.6; font-size: 0.95rem; }
+
+  .setup-card {
+    background: var(--card-h);
+    border-radius: 20px;
+    padding: 24px 28px;
+    width: 100%;
+    text-align: left;
+  }
+  .setup-card h3 {
+    font-family: 'Fredoka One', cursive;
+    color: var(--blue);
+    font-size: 1.1rem;
+    margin-bottom: 12px;
+  }
+  .setup-card p { font-size: 0.88rem; color: var(--muted); line-height: 1.6; }
+  .setup-card ol { font-size: 0.88rem; color: var(--muted); line-height: 2; padding-left: 20px; }
+  .setup-card ol li span { color: var(--text); font-weight: 700; }
+
+  .pattern-chips {
+    display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px;
+  }
+  .pattern-chip {
+    background: rgba(255,255,255,0.08);
+    border: 1.5px solid rgba(255,255,255,0.15);
+    border-radius: 20px;
+    padding: 4px 14px;
+    font-size: 0.82rem;
+    color: var(--text);
+    font-weight: 700;
+  }
+
+  /* GAME SCREEN */
+  #game-screen { display: none; width: 100%; max-width: 700px; padding: 20px; }
+
+  .round-info {
+    text-align: center;
+    margin-bottom: 16px;
+  }
+  .round-info .round-label {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1rem;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .round-info .pattern-target {
+    font-size: 0.85rem;
+    color: var(--yellow);
+    margin-top: 4px;
+    font-weight: 700;
+  }
+
+  .arena {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+
+  .player-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+  .player-label {
+    font-family: 'Fredoka One', cursive;
+    font-size: 0.9rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .teacher-label { color: var(--coral); }
+  .student-label { color: #5aacba; }
+
+  .word-card {
+    width: 100%;
+    aspect-ratio: 1.4;
+    background: var(--card-h);
+    border-radius: 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 2.5px solid rgba(255,255,255,0.08);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.2s;
+  }
+  .word-card .the-word {
+    font-family: 'Fredoka One', cursive;
+    font-size: 2.2rem;
+    color: white;
+    letter-spacing: 0.03em;
+    text-align: center;
+    padding: 0 12px;
+  }
+  .word-card .pattern-badge {
+    position: absolute;
+    bottom: 10px;
+    background: rgba(255,255,255,0.12);
+    border-radius: 10px;
+    padding: 4px 12px;
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.8);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .word-card.revealed .pattern-badge { opacity: 1; }
+  .word-card.dealt .pattern-badge { opacity: 1; }
+  .word-card.match-flash {
+    animation: matchFlash 0.5s ease;
+  }
+  @keyframes matchFlash {
+    0% { transform: scale(1); box-shadow: none; }
+    40% { transform: scale(1.06); box-shadow: 0 0 40px rgba(82,183,136,0.6); }
+    100% { transform: scale(1); box-shadow: none; }
+  }
+  .word-card.no-match {
+    animation: noMatch 0.4s ease;
+  }
+  @keyframes noMatch {
+    0%,100% { transform: translateX(0); }
+    25% { transform: translateX(-8px); }
+    75% { transform: translateX(8px); }
+  }
+
+  .vs-divider {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  .vs-text {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.6rem;
+    color: var(--muted);
+  }
+  .next-card-peek {
+    width: 36px; height: 50px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 8px;
+    border: 1.5px dashed rgba(255,255,255,0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.65rem;
+    color: var(--muted);
+  }
+
+  /* SNAP BUTTON */
+  .snap-zone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    margin: 10px 0 20px;
+  }
+  .snap-instruction {
+    font-size: 0.82rem;
+    color: var(--muted);
+    text-align: center;
+    max-width: 380px;
+    line-height: 1.5;
+  }
+  .snap-buttons {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .snap-btn {
+    font-family: 'Fredoka One', cursive;
+    font-size: 2rem;
+    letter-spacing: 0.04em;
+    padding: 16px 40px;
+    border-radius: 20px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-shadow: 1px 1px 0 rgba(0,0,0,0.2);
+    box-shadow: 0 6px 0 rgba(0,0,0,0.3);
+  }
+  .snap-btn:hover { transform: translateY(-3px); box-shadow: 0 9px 0 rgba(0,0,0,0.3); }
+  .snap-btn:active { transform: translateY(3px); box-shadow: 0 3px 0 rgba(0,0,0,0.3); }
+  .snap-teacher { background: var(--coral); color: white; }
+  .snap-student { background: #5aacba; color: white; }
+  .snap-nomatch {
+    background: rgba(255,255,255,0.08);
+    color: rgba(255,255,255,0.7);
+    border: 2.5px solid rgba(255,255,255,0.2);
+    font-size: 1.2rem;
+    padding: 12px 28px;
+    box-shadow: none;
+  }
+  .snap-nomatch:hover { background: rgba(255,255,255,0.14); box-shadow: none; transform: none; }
+
+  /* Pattern key */
+  .pattern-key {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    padding: 0 16px 16px;
+    max-width: 700px;
+  }
+  .pk-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 20px;
+    padding: 5px 12px;
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.55);
+    font-weight: 600;
+  }
+  .pk-chip .pk-name { color: rgba(255,255,255,0.85); font-weight: 800; }
+
+  .deal-btn {
+    font-family: 'Nunito', sans-serif;
+    font-weight: 800;
+    font-size: 1rem;
+    padding: 13px 32px;
+    border-radius: 14px;
+    border: none;
+    cursor: pointer;
+    background: var(--yellow);
+    color: #333;
+    transition: all 0.15s;
+  }
+  .deal-btn:hover { transform: translateY(-2px); }
+
+  /* FEEDBACK OVERLAY */
+  #snap-result {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    z-index: 50;
+  }
+  .snap-result-inner {
+    font-family: 'Fredoka One', cursive;
+    font-size: 4rem;
+    color: white;
+    text-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    opacity: 0;
+    transform: scale(0.5);
+    transition: all 0.2s;
+    text-align: center;
+    pointer-events: none;
+  }
+  .snap-result-inner.show {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+
+  /* SCORE TRACK */
+  .score-track {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+  .score-pip {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 800;
+    border: 2px solid rgba(255,255,255,0.1);
+    color: rgba(255,255,255,0.3);
+  }
+  .score-pip.teacher-win { background: var(--coral); color: white; border-color: var(--coral); }
+  .score-pip.student-win { background: #5aacba; color: white; border-color: #5aacba; }
+  .score-pip.no-snap { background: rgba(255,255,255,0.08); }
+
+  /* RESULT SCREEN */
+  #result-screen {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 20px;
+    gap: 20px;
+    text-align: center;
+    max-width: 500px;
+    margin: 0 auto;
+  }
+  #result-screen h2 {
+    font-family: 'Fredoka One', cursive;
+    font-size: 2.4rem;
+    color: var(--yellow);
+  }
+  .final-score {
+    display: flex;
+    gap: 30px;
+    background: var(--card-h);
+    padding: 24px 40px;
+    border-radius: 20px;
+  }
+  .final-score .scorer { text-align: center; }
+  .final-score .scorer .num {
+    font-family: 'Fredoka One', cursive;
+    font-size: 3rem;
+    line-height: 1;
+  }
+  .final-score .scorer .lbl { font-size: 0.8rem; color: var(--muted); margin-top: 4px; }
+  .final-score .scorer.t .num { color: var(--coral); }
+  .final-score .scorer.s .num { color: #5aacba; }
+
+  .btn-start {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.4rem;
+    letter-spacing: 0.04em;
+    padding: 14px 40px;
+    border-radius: 16px;
+    border: none;
+    cursor: pointer;
+    background: var(--green);
+    color: white;
+    box-shadow: 0 5px 0 #2d8059;
+    transition: all 0.15s;
+  }
+  .btn-start:hover { transform: translateY(-3px); box-shadow: 0 8px 0 #2d8059; }
+
+  .pattern-reveal {
+    background: var(--card-h);
+    border-radius: 14px;
+    padding: 14px 20px;
+    font-size: 0.85rem;
+    color: var(--muted);
+    max-width: 400px;
+    line-height: 1.7;
+    text-align: left;
+  }
+  .pattern-reveal strong { color: var(--yellow); }
+  .pattern-reveal .ex { color: var(--text); font-weight: 700; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🃏 Snap!</h1>
+  <div class="score-pill">
+    <div>🍎 <span>Teacher</span> <strong id="t-score-hdr">0</strong></div>
+    <div>⭐ <span>Student</span> <strong id="s-score-hdr">0</strong></div>
+  </div>
+</header>
+
+<!-- SETUP -->
+<div id="setup-screen">
+  <div>
+    <h2>Pattern Snap!</h2>
+    <p>Spot matching patterns before your opponent. First to call SNAP wins the round!</p>
+  </div>
+
+  <div class="setup-card">
+    <h3>How to Play</h3>
+    <ol>
+      <li>Click <span>Deal</span> — both players get a word card</li>
+      <li>Look for words with the <span>same pattern</span> (e.g., both V-e, both FLOSS)</li>
+      <li>First to click their <span>SNAP button</span> wins — but only if it's actually a match!</li>
+      <li>Wrong snap = opponent gets the point</li>
+    </ol>
+  </div>
+
+  <div class="setup-card">
+    <h3>Patterns in Play</h3>
+    <div class="pattern-chips">
+      <div class="pattern-chip">🔒 Closed</div>
+      <div class="pattern-chip">✨ V-e</div>
+      <div class="pattern-chip">📏 FLOSS</div>
+      <div class="pattern-chip">🔗 Welded</div>
+      <div class="pattern-chip">🤝 Digraph</div>
+      <div class="pattern-chip">🌊 Blend</div>
+    </div>
+    <p style="margin-top:12px;">After each snap, the pattern is revealed so you can discuss it.</p>
+  </div>
+
+  <button class="btn-start" onclick="startGame()">▶ Start Game</button>
+</div>
+
+<!-- GAME -->
+<div id="game-screen">
+  <div class="round-info">
+    <div class="round-label">Round <span id="round-num">1</span> of 15</div>
+    <div id="match-hint" class="pattern-target" style="opacity:0">hint</div>
+  </div>
+
+  <div class="score-track" id="score-track"></div>
+
+  <div class="arena">
+    <div class="player-area">
+      <div class="player-label teacher-label">🍎 Teacher</div>
+      <div class="word-card" id="teacher-card">
+        <div class="the-word" id="teacher-word">?</div>
+        <div class="pattern-badge" id="teacher-badge"></div>
+      </div>
+    </div>
+
+    <div class="vs-divider">
+      <div class="vs-text">VS</div>
+      <div class="next-card-peek">next</div>
+    </div>
+
+    <div class="player-area">
+      <div class="player-label student-label">⭐ You</div>
+      <div class="word-card" id="student-card">
+        <div class="the-word" id="student-word">?</div>
+        <div class="pattern-badge" id="student-badge"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="snap-zone">
+    <div class="snap-instruction" id="snap-instruction">Click Deal to reveal both cards, then SNAP if you see a matching pattern!</div>
+    <div class="snap-buttons">
+      <button class="snap-btn snap-teacher" id="teacher-snap-btn" onclick="snap('teacher')" disabled>SNAP! 🍎</button>
+      <button class="deal-btn" id="deal-btn" onclick="dealCards()">Deal Cards ▶</button>
+      <button class="snap-btn snap-student" id="student-snap-btn" onclick="snap('student')" disabled>SNAP! ⭐</button>
+    </div>
+    <button class="snap-btn snap-nomatch" id="nomatch-btn" onclick="callNoMatch()" disabled>🚫 No Match</button>
+  </div>
+
+  <div class="pattern-key">
+    <div class="pk-chip"><span class="pk-name">Closed</span> · short vowel, ends in consonant (hat, flip)</div>
+    <div class="pk-chip"><span class="pk-name">V-e</span> · long vowel, silent e (make, stone)</div>
+    <div class="pk-chip"><span class="pk-name">FLOSS</span> · ff / ll / ss / zz after short vowel (bell, floss)</div>
+    <div class="pk-chip"><span class="pk-name">Welded</span> · -ang / -ing / -ong / -ung / -ank / -ink / -onk / -unk (rink, song)</div>
+    <div class="pk-chip"><span class="pk-name">Digraph</span> · sh / ch / th / wh (shop, thick)</div>
+    <div class="pk-chip"><span class="pk-name">Blend</span> · two consonants, both heard (flag, grin)</div>
+  </div>
+
+  <div id="snap-result"><div class="snap-result-inner" id="snap-result-inner"></div></div>
+</div>
+
+<!-- RESULT -->
+<div id="result-screen">
+  <h2>Game Over!</h2>
+  <div class="final-score">
+    <div class="scorer t">
+      <div class="num" id="final-t">0</div>
+      <div class="lbl">🍎 Teacher</div>
+    </div>
+    <div class="scorer s">
+      <div class="num" id="final-s">0</div>
+      <div class="lbl">⭐ Student</div>
+    </div>
+  </div>
+  <div id="winner-msg" style="font-family:'Fredoka One',cursive;font-size:1.5rem;color:var(--green);"></div>
+  <button class="btn-start" onclick="resetGame()">▶ Play Again</button>
+  <button class="btn-start" style="background:#444;box-shadow:0 5px 0 #222;" onclick="showSetup()">← Rules</button>
+</div>
+
+<script>
+const WORD_SETS = [
+  { word: 'hat',     pattern: 'Closed', color: '#5aacba' },
+  { word: 'flip',    pattern: 'Closed', color: '#5aacba' },
+  { word: 'stamp',   pattern: 'Closed', color: '#5aacba' },
+  { word: 'chest',   pattern: 'Closed', color: '#5aacba' },
+  { word: 'rink',    pattern: 'Welded', color: '#9b59b6' },
+  { word: 'blank',   pattern: 'Welded', color: '#9b59b6' },
+  { word: 'hang',    pattern: 'Welded', color: '#9b59b6' },
+  { word: 'song',    pattern: 'Welded', color: '#9b59b6' },
+  { word: 'floss',   pattern: 'FLOSS',  color: '#e67e22' },
+  { word: 'bell',    pattern: 'FLOSS',  color: '#e67e22' },
+  { word: 'class',   pattern: 'FLOSS',  color: '#e67e22' },
+  { word: 'staff',   pattern: 'FLOSS',  color: '#e67e22' },
+  { word: 'make',    pattern: 'V-e',    color: '#e66b5d' },
+  { word: 'stone',   pattern: 'V-e',    color: '#e66b5d' },
+  { word: 'bike',    pattern: 'V-e',    color: '#e66b5d' },
+  { word: 'tune',    pattern: 'V-e',    color: '#e66b5d' },
+  { word: 'globe',   pattern: 'V-e',    color: '#e66b5d' },
+  { word: 'shame',   pattern: 'V-e',    color: '#e66b5d' },
+  { word: 'shop',    pattern: 'Digraph', color: '#52b788' },
+  { word: 'thick',   pattern: 'Digraph', color: '#52b788' },
+  { word: 'when',    pattern: 'Digraph', color: '#52b788' },
+  { word: 'chip',    pattern: 'Digraph', color: '#52b788' },
+  { word: 'flag',    pattern: 'Blend',  color: '#f3d25b' },
+  { word: 'grin',    pattern: 'Blend',  color: '#f3d25b' },
+  { word: 'skip',    pattern: 'Blend',  color: '#f3d25b' },
+  { word: 'clam',    pattern: 'Blend',  color: '#f3d25b' },
+];
+
+let deck = [];
+let teacherCard = null;
+let studentCard = null;
+let round = 0;
+let totalRounds = 15;
+let tScore = 0;
+let sScore = 0;
+let roundResults = [];
+let cardsDealt = false;
+let snapLocked = false;
+
+function shuffle(arr) {
+  return [...arr].sort(() => Math.random() - 0.5);
+}
+
+function buildDeck() {
+  // Create pairs so matches happen ~50% of the time
+  let cards = shuffle(WORD_SETS);
+  let teacherDeck = [];
+  let studentDeck = [];
+  
+  for (let i = 0; i < totalRounds; i++) {
+    teacherDeck.push(cards[i % cards.length]);
+  }
+  
+  // ~7 matches out of 15
+  for (let i = 0; i < totalRounds; i++) {
+    if (i < 7) {
+      // same pattern, different word
+      const pat = teacherDeck[i].pattern;
+      const matches = cards.filter(c => c.pattern === pat && c.word !== teacherDeck[i].word);
+      studentDeck.push(matches.length ? matches[Math.floor(Math.random()*matches.length)] : cards[(i+8)%cards.length]);
+    } else {
+      // different pattern
+      const pat = teacherDeck[i].pattern;
+      const nonMatch = shuffle(cards.filter(c => c.pattern !== pat));
+      studentDeck.push(nonMatch[0] || cards[(i+5)%cards.length]);
+    }
+  }
+  
+  // Shuffle which positions are matches
+  deck = shuffle(Array.from({length: totalRounds}, (_, i) => ({
+    teacher: teacherDeck[i],
+    student: i < 7 ? studentDeck[i] : studentDeck[i],
+    isMatch: i < 7
+  })));
+}
+
+function startGame() {
+  buildDeck();
+  round = 0; tScore = 0; sScore = 0; roundResults = [];
+  document.getElementById('t-score-hdr').textContent = 0;
+  document.getElementById('s-score-hdr').textContent = 0;
+  document.getElementById('setup-screen').style.display = 'none';
+  document.getElementById('result-screen').style.display = 'none';
+  document.getElementById('game-screen').style.display = 'block';
+  renderScoreTrack();
+  prepareRound();
+}
+
+function showSetup() {
+  document.getElementById('result-screen').style.display = 'none';
+  document.getElementById('setup-screen').style.display = 'flex';
+}
+
+function prepareRound() {
+  if (round >= totalRounds) { showResult(); return; }
+  cardsDealt = false;
+  snapLocked = false;
+  teacherCard = deck[round].teacher;
+  studentCard = deck[round].student;
+
+  document.getElementById('round-num').textContent = round + 1;
+  document.getElementById('teacher-word').textContent = '?';
+  document.getElementById('student-word').textContent = '?';
+  document.getElementById('teacher-badge').textContent = '';
+  document.getElementById('student-badge').textContent = '';
+  document.getElementById('teacher-card').classList.remove('revealed','match-flash','no-match','dealt');
+  document.getElementById('student-card').classList.remove('revealed','match-flash','no-match','dealt');
+  document.getElementById('teacher-card').style.borderColor = 'rgba(255,255,255,0.08)';
+  document.getElementById('student-card').style.borderColor = 'rgba(255,255,255,0.08)';
+  document.getElementById('match-hint').style.opacity = '0';
+  document.getElementById('snap-instruction').textContent = 'Click Deal to reveal both cards, then SNAP if you see a matching pattern!';
+  document.getElementById('teacher-snap-btn').disabled = true;
+  document.getElementById('student-snap-btn').disabled = true;
+  document.getElementById('nomatch-btn').disabled = true;
+  document.getElementById('deal-btn').style.display = 'block';
+  document.getElementById('deal-btn').textContent = 'Deal Cards ▶';
+}
+
+function dealCards() {
+  if (cardsDealt) return;
+  cardsDealt = true;
+  
+  document.getElementById('teacher-word').textContent = teacherCard.word;
+  document.getElementById('student-word').textContent = studentCard.word;
+  document.getElementById('teacher-badge').textContent = teacherCard.pattern;
+  document.getElementById('student-badge').textContent = studentCard.pattern;
+  document.getElementById('teacher-card').style.borderColor = teacherCard.color + '66';
+  document.getElementById('student-card').style.borderColor = studentCard.color + '66';
+  document.getElementById('teacher-card').classList.add('dealt');
+  document.getElementById('student-card').classList.add('dealt');
+  document.getElementById('teacher-snap-btn').disabled = false;
+  document.getElementById('student-snap-btn').disabled = false;
+  document.getElementById('nomatch-btn').disabled = false;
+  document.getElementById('deal-btn').style.display = 'none';
+  document.getElementById('snap-instruction').textContent = deck[round].isMatch
+    ? 'Same pattern on both cards — SNAP!'
+    : 'Different patterns — call No Match!';
+}
+
+function snap(who) {
+  if (!cardsDealt || snapLocked) return;
+  snapLocked = true;
+  const isMatch = deck[round].isMatch;
+  let winner = isMatch ? who : (who === 'teacher' ? 'student' : 'teacher');
+
+  if (winner === 'teacher') {
+    tScore++;
+    document.getElementById('t-score-hdr').textContent = tScore;
+    roundResults.push('teacher');
+    showSnapResult('🍎 Teacher wins!', '#e66b5d');
+  } else {
+    sScore++;
+    document.getElementById('s-score-hdr').textContent = sScore;
+    roundResults.push('student');
+    showSnapResult('⭐ Student wins!', '#5aacba');
+  }
+
+  revealAndAdvance(isMatch);
+}
+
+function callNoMatch() {
+  if (!cardsDealt || snapLocked) return;
+  snapLocked = true;
+  const isMatch = deck[round].isMatch;
+  // Correct call = no match and there genuinely isn't one → caller wins
+  // Wrong call = there IS a match → other side (teacher) wins as penalty
+  // Since No Match is a shared button with no "side", award to student if correct, teacher if wrong
+  // Actually: treat No Match as a neutral call — correct = student point (they caught it), wrong = teacher point
+  // Better: first to call No Match correctly wins; teacher wins on wrong call (teacher controls the game)
+  let winner;
+  if (!isMatch) {
+    winner = 'student'; // correct — student spotted the non-match
+    showSnapResult('✓ Correct! No match!', '#52b788');
+  } else {
+    winner = 'teacher'; // wrong call — there was a match
+    showSnapResult('✗ Wrong! It was a match!', '#e66b5d');
+  }
+
+  if (winner === 'teacher') {
+    tScore++;
+    document.getElementById('t-score-hdr').textContent = tScore;
+    roundResults.push('teacher');
+  } else {
+    sScore++;
+    document.getElementById('s-score-hdr').textContent = sScore;
+    roundResults.push('student');
+  }
+
+  revealAndAdvance(isMatch);
+}
+
+function revealAndAdvance(isMatch) {
+  document.getElementById('teacher-badge').textContent = teacherCard.pattern;
+  document.getElementById('student-badge').textContent = studentCard.pattern;
+  document.getElementById('teacher-card').classList.add('revealed');
+  document.getElementById('student-card').classList.add('revealed');
+
+  if (isMatch) {
+    document.getElementById('teacher-card').classList.add('match-flash');
+    document.getElementById('student-card').classList.add('match-flash');
+    document.getElementById('match-hint').textContent = `✓ Match! Both ${teacherCard.pattern}`;
+  } else {
+    document.getElementById('match-hint').textContent = `✗ No match: ${teacherCard.pattern} vs ${studentCard.pattern}`;
+  }
+  document.getElementById('match-hint').style.opacity = '1';
+
+  document.getElementById('teacher-snap-btn').disabled = true;
+  document.getElementById('student-snap-btn').disabled = true;
+  document.getElementById('nomatch-btn').disabled = true;
+  renderScoreTrack();
+
+  setTimeout(() => {
+    round++;
+    if (round < totalRounds) {
+      document.getElementById('deal-btn').style.display = 'block';
+      document.getElementById('deal-btn').textContent = 'Next Round ▶';
+      document.getElementById('deal-btn').onclick = () => { prepareRound(); dealCards(); };
+    } else {
+      document.getElementById('deal-btn').style.display = 'block';
+      document.getElementById('deal-btn').textContent = 'See Results!';
+      document.getElementById('deal-btn').onclick = showResult;
+    }
+    snapLocked = false;
+  }, 2000);
+}
+
+function showSnapResult(msg, color) {
+  const el = document.getElementById('snap-result-inner');
+  el.textContent = msg;
+  el.style.color = color;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 1400);
+}
+
+function renderScoreTrack() {
+  const track = document.getElementById('score-track');
+  track.innerHTML = '';
+  for (let i = 0; i < totalRounds; i++) {
+    const pip = document.createElement('div');
+    pip.className = 'score-pip';
+    if (i < roundResults.length) {
+      pip.classList.add(roundResults[i] === 'teacher' ? 'teacher-win' : 'student-win');
+      pip.textContent = roundResults[i] === 'teacher' ? '🍎' : '⭐';
+    } else {
+      pip.textContent = i + 1;
+    }
+    track.appendChild(pip);
+  }
+}
+
+function showResult() {
+  document.getElementById('game-screen').style.display = 'none';
+  document.getElementById('result-screen').style.display = 'flex';
+  document.getElementById('final-t').textContent = tScore;
+  document.getElementById('final-s').textContent = sScore;
+  const msg = sScore > tScore ? '🎉 You win!' : sScore === tScore ? '🤝 It\'s a tie!' : '🍎 Teacher wins — rematch?';
+  document.getElementById('winner-msg').textContent = msg;
+}
+
+function resetGame() {
+  startGame();
+}
+</script>
+</body>
+</html>
