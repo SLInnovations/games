@@ -2,10 +2,263 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>My Site</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SL Innovations – Game Arcade</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&family=Fredoka+One&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f1b2d;
+      --card-bg: #162035;
+      --accent1: #f9c846;
+      --accent2: #ff6b6b;
+      --accent3: #4ecdc4;
+      --accent4: #a29bfe;
+      --accent5: #55efc4;
+      --text: #f0f4ff;
+      --muted: #8899bb;
+    }
+
+    body {
+      font-family: 'Nunito', sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Starfield background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,0.6) 0%, transparent 100%),
+        radial-gradient(1px 1px at 30% 60%, rgba(255,255,255,0.4) 0%, transparent 100%),
+        radial-gradient(1px 1px at 50% 10%, rgba(255,255,255,0.5) 0%, transparent 100%),
+        radial-gradient(1px 1px at 70% 80%, rgba(255,255,255,0.3) 0%, transparent 100%),
+        radial-gradient(1px 1px at 90% 40%, rgba(255,255,255,0.6) 0%, transparent 100%),
+        radial-gradient(1px 1px at 20% 90%, rgba(255,255,255,0.4) 0%, transparent 100%),
+        radial-gradient(1px 1px at 80% 15%, rgba(255,255,255,0.5) 0%, transparent 100%),
+        radial-gradient(1px 1px at 45% 50%, rgba(255,255,255,0.3) 0%, transparent 100%),
+        radial-gradient(1px 1px at 60% 70%, rgba(255,255,255,0.4) 0%, transparent 100%),
+        radial-gradient(1px 1px at 15% 45%, rgba(255,255,255,0.5) 0%, transparent 100%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    header {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      padding: 3.5rem 1rem 2rem;
+      animation: fadeDown 0.7s ease both;
+    }
+
+    .logo-badge {
+      display: inline-block;
+      background: var(--accent1);
+      color: #0f1b2d;
+      font-family: 'Fredoka One', cursive;
+      font-size: 0.85rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 0.3rem 1rem;
+      border-radius: 999px;
+      margin-bottom: 1rem;
+    }
+
+    h1 {
+      font-family: 'Fredoka One', cursive;
+      font-size: clamp(2.5rem, 6vw, 4.5rem);
+      line-height: 1.1;
+      background: linear-gradient(135deg, var(--accent1), var(--accent2), var(--accent3));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 0.75rem;
+    }
+
+    header p {
+      color: var(--muted);
+      font-size: 1.1rem;
+      font-weight: 700;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    main {
+      position: relative;
+      z-index: 1;
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 5rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: 20px;
+      padding: 2rem 1.75rem;
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      border: 2px solid transparent;
+      transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+      animation: fadeUp 0.6s ease both;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      border-radius: 18px;
+    }
+
+    .card:hover {
+      transform: translateY(-6px) scale(1.02);
+      box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+    }
+
+    .card:hover::before { opacity: 1; }
+
+    .card:nth-child(1) { animation-delay: 0.1s; --c: var(--accent1); }
+    .card:nth-child(2) { animation-delay: 0.2s; --c: var(--accent2); }
+    .card:nth-child(3) { animation-delay: 0.3s; --c: var(--accent3); }
+    .card:nth-child(4) { animation-delay: 0.4s; --c: var(--accent4); }
+    .card:nth-child(5) { animation-delay: 0.5s; --c: var(--accent5); }
+
+    .card:hover { border-color: var(--c); box-shadow: 0 16px 40px rgba(0,0,0,0.4), 0 0 20px color-mix(in srgb, var(--c) 30%, transparent); }
+
+    .card-icon {
+      font-size: 2.5rem;
+      line-height: 1;
+    }
+
+    .card-tag {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 900;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--c);
+      background: color-mix(in srgb, var(--c) 15%, transparent);
+      padding: 0.25rem 0.65rem;
+      border-radius: 999px;
+      width: fit-content;
+    }
+
+    .card h2 {
+      font-family: 'Fredoka One', cursive;
+      font-size: 1.5rem;
+      color: var(--text);
+      line-height: 1.2;
+    }
+
+    .card p {
+      font-size: 0.9rem;
+      color: var(--muted);
+      line-height: 1.6;
+      flex: 1;
+    }
+
+    .card-arrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.85rem;
+      font-weight: 900;
+      color: var(--c);
+      margin-top: 0.5rem;
+      transition: gap 0.2s ease;
+    }
+
+    .card:hover .card-arrow { gap: 0.7rem; }
+
+    footer {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      padding: 1.5rem;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+  </style>
 </head>
 <body>
-  <h1>Welcome to my site!</h1>
-  <p>This is my GitHub Pages site.</p>
+
+  <header>
+    <div class="logo-badge">SL Innovations</div>
+    <h1>Game Arcade</h1>
+    <p>Interactive literacy games for structured reading practice</p>
+  </header>
+
+  <main>
+
+    <a class="card" href="Game2_Snap_1.html">
+      <div class="card-icon">⚡</div>
+      <span class="card-tag">Card Game</span>
+      <h2>Snap!</h2>
+      <p>Fast-paced pattern recognition game. Match cards before your opponent does!</p>
+      <span class="card-arrow">Play now →</span>
+    </a>
+
+    <a class="card" href="Game4_SuffixSpinner.html">
+      <div class="card-icon">🌀</div>
+      <span class="card-tag">Word Building</span>
+      <h2>Suffix Spinner</h2>
+      <p>Spin to build real words by adding suffixes to base words. How many can you make?</p>
+      <span class="card-arrow">Play now →</span>
+    </a>
+
+    <a class="card" href="SSR_PatternMatch_v4.html">
+      <div class="card-icon">🔍</div>
+      <span class="card-tag">Pattern Match</span>
+      <h2>Pattern Match</h2>
+      <p>Spot the spelling patterns hidden in words. Train your eye for phonics and structure.</p>
+      <span class="card-arrow">Play now →</span>
+    </a>
+
+    <a class="card" href="Syllable_Smash_Machine_1.html">
+      <div class="card-icon">💥</div>
+      <span class="card-tag">Syllables</span>
+      <h2>Syllable Smash Machine</h2>
+      <p>Break words apart syllable by syllable. Smash through the machine to decode tricky words!</p>
+      <span class="card-arrow">Play now →</span>
+    </a>
+
+    <a class="card" href="game_wordbuilder.html">
+      <div class="card-icon">🧱</div>
+      <span class="card-tag">Word Builder</span>
+      <h2>Word Builder</h2>
+      <p>Construct words from phoneme parts. Stack the pieces and build your reading power.</p>
+      <span class="card-arrow">Play now →</span>
+    </a>
+
+  </main>
+
+  <footer>
+    &copy; 2026 SL Innovations · Structured Literacy Tools
+  </footer>
+
 </body>
 </html>
