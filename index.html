@@ -1,264 +1,286 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SL Innovations – Game Arcade</title>
-  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&family=Fredoka+One&display=swap" rel="stylesheet">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SL Innovations – Game Launcher</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet"/>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    :root {
-      --bg: #0f1b2d;
-      --card-bg: #162035;
-      --accent1: #f9c846;
-      --accent2: #ff6b6b;
-      --accent3: #4ecdc4;
-      --accent4: #a29bfe;
-      --accent5: #55efc4;
-      --text: #f0f4ff;
-      --muted: #8899bb;
-    }
-
     body {
       font-family: 'Nunito', sans-serif;
-      background-color: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      overflow-x: hidden;
-    }
-
-    /* Starfield background */
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
+      background-color: #0f0f2e;
       background-image:
-        radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,0.6) 0%, transparent 100%),
-        radial-gradient(1px 1px at 30% 60%, rgba(255,255,255,0.4) 0%, transparent 100%),
-        radial-gradient(1px 1px at 50% 10%, rgba(255,255,255,0.5) 0%, transparent 100%),
-        radial-gradient(1px 1px at 70% 80%, rgba(255,255,255,0.3) 0%, transparent 100%),
-        radial-gradient(1px 1px at 90% 40%, rgba(255,255,255,0.6) 0%, transparent 100%),
-        radial-gradient(1px 1px at 20% 90%, rgba(255,255,255,0.4) 0%, transparent 100%),
-        radial-gradient(1px 1px at 80% 15%, rgba(255,255,255,0.5) 0%, transparent 100%),
-        radial-gradient(1px 1px at 45% 50%, rgba(255,255,255,0.3) 0%, transparent 100%),
-        radial-gradient(1px 1px at 60% 70%, rgba(255,255,255,0.4) 0%, transparent 100%),
-        radial-gradient(1px 1px at 15% 45%, rgba(255,255,255,0.5) 0%, transparent 100%);
-      pointer-events: none;
-      z-index: 0;
+        radial-gradient(ellipse at 20% 30%, rgba(91, 33, 182, 0.3) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 70%, rgba(16, 185, 129, 0.2) 0%, transparent 60%);
+      min-height: 100vh;
+      padding: 40px 20px 60px;
+      color: #fff;
     }
 
     header {
-      position: relative;
-      z-index: 1;
       text-align: center;
-      padding: 3.5rem 1rem 2rem;
-      animation: fadeDown 0.7s ease both;
+      margin-bottom: 50px;
     }
 
-    .logo-badge {
-      display: inline-block;
-      background: var(--accent1);
-      color: #0f1b2d;
+    header h1 {
       font-family: 'Fredoka One', cursive;
-      font-size: 0.85rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      padding: 0.3rem 1rem;
-      border-radius: 999px;
-      margin-bottom: 1rem;
-    }
-
-    h1 {
-      font-family: 'Fredoka One', cursive;
-      font-size: clamp(2.5rem, 6vw, 4.5rem);
-      line-height: 1.1;
-      background: linear-gradient(135deg, var(--accent1), var(--accent2), var(--accent3));
+      font-size: clamp(2.2rem, 6vw, 4rem);
+      letter-spacing: 2px;
+      background: linear-gradient(135deg, #f9a8d4, #a78bfa, #67e8f9);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
-      margin-bottom: 0.75rem;
+      text-shadow: none;
+      margin-bottom: 10px;
     }
 
     header p {
-      color: var(--muted);
+      font-size: 1rem;
+      color: #a5b4fc;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .stars {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      margin-top: 10px;
+      font-size: 1.2rem;
+    }
+
+    /* Section headings */
+    .section-label {
+      font-family: 'Fredoka One', cursive;
       font-size: 1.1rem;
-      font-weight: 700;
-      max-width: 480px;
-      margin: 0 auto;
-    }
-
-    main {
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: #a78bfa;
+      text-align: center;
+      margin-bottom: 20px;
       position: relative;
-      z-index: 1;
-      max-width: 1000px;
-      margin: 0 auto;
-      padding: 2rem 1.5rem 5rem;
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 1.5rem;
     }
 
+    .section-label::before,
+    .section-label::after {
+      content: '';
+      display: inline-block;
+      width: 40px;
+      height: 2px;
+      background: #a78bfa;
+      vertical-align: middle;
+      margin: 0 12px;
+      opacity: 0.5;
+    }
+
+    /* Grid */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 20px;
+      max-width: 1100px;
+      margin: 0 auto 50px;
+    }
+
+    /* Cards */
     .card {
-      background: var(--card-bg);
-      border-radius: 20px;
-      padding: 2rem 1.75rem;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 18px;
+      padding: 28px 24px;
       text-decoration: none;
-      color: inherit;
+      color: #fff;
       display: flex;
       flex-direction: column;
-      gap: 0.75rem;
-      border: 2px solid transparent;
-      transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-      animation: fadeUp 0.6s ease both;
+      align-items: flex-start;
+      gap: 10px;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
       position: relative;
       overflow: hidden;
+      cursor: pointer;
     }
 
     .card::before {
       content: '';
       position: absolute;
       inset: 0;
+      background: linear-gradient(135deg, var(--card-color-a), var(--card-color-b));
       opacity: 0;
-      transition: opacity 0.3s ease;
+      transition: opacity 0.25s ease;
       border-radius: 18px;
     }
 
+    .card:hover::before { opacity: 0.15; }
     .card:hover {
-      transform: translateY(-6px) scale(1.02);
-      box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+      transform: translateY(-5px);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.4), 0 0 0 1px var(--card-color-a);
     }
-
-    .card:hover::before { opacity: 1; }
-
-    .card:nth-child(1) { animation-delay: 0.1s; --c: var(--accent1); }
-    .card:nth-child(2) { animation-delay: 0.2s; --c: var(--accent2); }
-    .card:nth-child(3) { animation-delay: 0.3s; --c: var(--accent3); }
-    .card:nth-child(4) { animation-delay: 0.4s; --c: var(--accent4); }
-    .card:nth-child(5) { animation-delay: 0.5s; --c: var(--accent5); }
-
-    .card:hover { border-color: var(--c); box-shadow: 0 16px 40px rgba(0,0,0,0.4), 0 0 20px color-mix(in srgb, var(--c) 30%, transparent); }
 
     .card-icon {
-      font-size: 2.5rem;
-      line-height: 1;
+      font-size: 2rem;
+      position: relative;
+      z-index: 1;
     }
 
-    .card-tag {
-      display: inline-block;
-      font-size: 0.7rem;
-      font-weight: 900;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--c);
-      background: color-mix(in srgb, var(--c) 15%, transparent);
-      padding: 0.25rem 0.65rem;
-      border-radius: 999px;
-      width: fit-content;
-    }
-
-    .card h2 {
+    .card-title {
       font-family: 'Fredoka One', cursive;
-      font-size: 1.5rem;
-      color: var(--text);
-      line-height: 1.2;
+      font-size: 1.2rem;
+      letter-spacing: 0.5px;
+      position: relative;
+      z-index: 1;
+      color: var(--card-color-a);
     }
 
-    .card p {
-      font-size: 0.9rem;
-      color: var(--muted);
-      line-height: 1.6;
-      flex: 1;
+    .card-desc {
+      font-size: 0.82rem;
+      color: #cbd5e1;
+      line-height: 1.5;
+      position: relative;
+      z-index: 1;
     }
 
     .card-arrow {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.4rem;
-      font-size: 0.85rem;
-      font-weight: 900;
-      color: var(--c);
-      margin-top: 0.5rem;
-      transition: gap 0.2s ease;
-    }
-
-    .card:hover .card-arrow { gap: 0.7rem; }
-
-    footer {
+      margin-top: auto;
+      font-size: 0.8rem;
+      color: var(--card-color-a);
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
       position: relative;
       z-index: 1;
+      opacity: 0.7;
+      transition: opacity 0.2s;
+    }
+
+    .card:hover .card-arrow { opacity: 1; }
+
+    footer {
       text-align: center;
-      padding: 1.5rem;
-      color: var(--muted);
-      font-size: 0.85rem;
-    }
-
-    @keyframes fadeDown {
-      from { opacity: 0; transform: translateY(-20px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(30px); }
-      to   { opacity: 1; transform: translateY(0); }
+      color: #475569;
+      font-size: 0.8rem;
+      margin-top: 20px;
     }
   </style>
 </head>
 <body>
 
   <header>
-    <div class="logo-badge">SL Innovations</div>
-    <h1>Game Arcade</h1>
-    <p>Interactive literacy games for structured reading practice</p>
+    <h1>🎮 SL Innovations</h1>
+    <p>Interactive Learning Games</p>
+    <div class="stars">⭐ ⭐ ⭐ ⭐ ⭐</div>
   </header>
 
-  <main>
+  <!-- GAMES -->
+  <div class="section-label">Games</div>
+  <div class="grid">
 
-    <a class="card" href="Game2_Snap_1.html">
-      <div class="card-icon">⚡</div>
-      <span class="card-tag">Card Game</span>
-      <h2>Snap!</h2>
-      <p>Fast-paced pattern recognition game. Match cards before your opponent does!</p>
-      <span class="card-arrow">Play now →</span>
+    <a class="card" href="Game2_Snap_1.html" style="--card-color-a:#f472b6;--card-color-b:#ec4899;">
+      <div class="card-icon">🃏</div>
+      <div class="card-title">Snap!</div>
+      <div class="card-desc">Quick-fire card matching game to build reading speed and accuracy.</div>
+      <div class="card-arrow">Play →</div>
     </a>
 
-    <a class="card" href="Game4_SuffixSpinner.html">
+    <a class="card" href="Game4_SuffixSpinner.html" style="--card-color-a:#fb923c;--card-color-b:#f97316;">
       <div class="card-icon">🌀</div>
-      <span class="card-tag">Word Building</span>
-      <h2>Suffix Spinner</h2>
-      <p>Spin to build real words by adding suffixes to base words. How many can you make?</p>
-      <span class="card-arrow">Play now →</span>
+      <div class="card-title">Suffix Spinner</div>
+      <div class="card-desc">Spin and build words with suffixes. Great for morphology practice.</div>
+      <div class="card-arrow">Play →</div>
     </a>
 
-    <a class="card" href="SSR_PatternMatch_v4.html">
+    <a class="card" href="SSR_PatternMatch_v4.html" style="--card-color-a:#34d399;--card-color-b:#10b981;">
       <div class="card-icon">🔍</div>
-      <span class="card-tag">Pattern Match</span>
-      <h2>Pattern Match</h2>
-      <p>Spot the spelling patterns hidden in words. Train your eye for phonics and structure.</p>
-      <span class="card-arrow">Play now →</span>
+      <div class="card-title">Pattern Match</div>
+      <div class="card-desc">Find and match spelling patterns across word sets.</div>
+      <div class="card-arrow">Play →</div>
     </a>
 
-    <a class="card" href="Syllable_Smash_Machine_1.html">
+    <a class="card" href="Syllable_Smash_Machine_1.html" style="--card-color-a:#818cf8;--card-color-b:#6366f1;">
       <div class="card-icon">💥</div>
-      <span class="card-tag">Syllables</span>
-      <h2>Syllable Smash Machine</h2>
-      <p>Break words apart syllable by syllable. Smash through the machine to decode tricky words!</p>
-      <span class="card-arrow">Play now →</span>
+      <div class="card-title">Syllable Smash Machine</div>
+      <div class="card-desc">Smash words apart by syllable type — fast and satisfying!</div>
+      <div class="card-arrow">Play →</div>
     </a>
 
-    <a class="card" href="game_wordbuilder.html">
+    <a class="card" href="game_wordbuilder.html" style="--card-color-a:#facc15;--card-color-b:#eab308;">
       <div class="card-icon">🧱</div>
-      <span class="card-tag">Word Builder</span>
-      <h2>Word Builder</h2>
-      <p>Construct words from phoneme parts. Stack the pieces and build your reading power.</p>
-      <span class="card-arrow">Play now →</span>
+      <div class="card-title">Word Builder</div>
+      <div class="card-desc">Stack up letter parts to construct words from the ground up.</div>
+      <div class="card-arrow">Play →</div>
     </a>
 
-  </main>
+  </div>
 
-  <footer>
-    &copy; 2026 SL Innovations · Structured Literacy Tools
-  </footer>
+  <!-- WORD STUDY -->
+  <div class="section-label">Word Study</div>
+  <div class="grid">
+
+    <a class="card" href="WS1_Ve_Multisyllabic_2.html" style="--card-color-a:#67e8f9;--card-color-b:#22d3ee;">
+      <div class="card-icon">📖</div>
+      <div class="card-title">VE Multisyllabic 2</div>
+      <div class="card-desc">Multisyllabic word study focusing on the VE pattern.</div>
+      <div class="card-arrow">Open →</div>
+    </a>
+
+    <a class="card" href="WS2_ai_ay_1.html" style="--card-color-a:#f9a8d4;--card-color-b:#f472b6;">
+      <div class="card-icon">📖</div>
+      <div class="card-title">ai / ay Word Study</div>
+      <div class="card-desc">Exploring the ai and ay vowel team patterns.</div>
+      <div class="card-arrow">Open →</div>
+    </a>
+
+    <a class="card" href="WS3_ee_ea.html" style="--card-color-a:#86efac;--card-color-b:#4ade80;">
+      <div class="card-icon">📖</div>
+      <div class="card-title">ee / ea Word Study</div>
+      <div class="card-desc">Sorting and reading ee and ea vowel team words.</div>
+      <div class="card-arrow">Open →</div>
+    </a>
+
+    <a class="card" href="WS4_Unit6_Mixed.html" style="--card-color-a:#fda4af;--card-color-b:#fb7185;">
+      <div class="card-icon">📖</div>
+      <div class="card-title">Unit 6 Mixed Word Study</div>
+      <div class="card-desc">Mixed review of Unit 6 patterns and concepts.</div>
+      <div class="card-arrow">Open →</div>
+    </a>
+
+  </div>
+
+  <!-- CARD WORK -->
+  <div class="section-label">Card Work</div>
+  <div class="grid">
+
+    <a class="card" href="CW1_Ve_Multisyllabic.html" style="--card-color-a:#c4b5fd;--card-color-b:#a78bfa;">
+      <div class="card-icon">🗂️</div>
+      <div class="card-title">VE Multisyllabic Cards</div>
+      <div class="card-desc">Flashcard-style practice for VE multisyllabic words.</div>
+      <div class="card-arrow">Open →</div>
+    </a>
+
+    <a class="card" href="CW3_Unit6_Mixed.html" style="--card-color-a:#fcd34d;--card-color-b:#fbbf24;">
+      <div class="card-icon">🗂️</div>
+      <div class="card-title">Unit 6 Mixed Cards</div>
+      <div class="card-desc">Mixed card review for Unit 6 structured literacy concepts.</div>
+      <div class="card-arrow">Open →</div>
+    </a>
+
+  </div>
+
+  <!-- MVT -->
+  <div class="section-label">Mixed Vowel Teams</div>
+  <div class="grid">
+
+    <a class="card" href="MVT1_ee_ea_ai_ay.html" style="--card-color-a:#6ee7b7;--card-color-b:#34d399;">
+      <div class="card-icon">🎯</div>
+      <div class="card-title">ee / ea / ai / ay</div>
+      <div class="card-desc">Practice across all four vowel teams in one activity.</div>
+      <div class="card-arrow">Open →</div>
+    </a>
+
+  </div>
+
+  <footer>© SL Innovations · Structured Literacy Resources</footer>
 
 </body>
 </html>
