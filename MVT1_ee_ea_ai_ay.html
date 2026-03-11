@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Missing Vowel Team: ee · ea · ai · ay</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #faf8f3; --surface: #fff; --surface2: #f0ede6;
+  --dark: #2c2416; --mid: #7a6e5e; --border: #ddd8cc;
+  --coral: #e66b5d; --blue: #d7ecf0; --yellow: #f3d25b; --green: #52b788;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--dark); min-height: 100vh; }
+
+header { background: var(--dark); padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; }
+header h1 { font-weight: 700; font-size: 1.3rem; color: var(--bg); }
+.hdr-badge { background: rgba(255,255,255,0.12); border-radius: 20px; padding: 4px 14px; font-size: 0.78rem; color: rgba(255,255,255,0.7); font-weight: 600; }
+
+.page { max-width: 700px; margin: 0 auto; padding: 20px 16px 40px; display: flex; flex-direction: column; gap: 18px; }
+.subtitle-bar { text-align: center; font-size: 0.82rem; font-weight: 600; color: var(--mid); letter-spacing: 0.06em; text-transform: uppercase; }
+
+/* SCORE */
+.score-bar { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.score-chip { background: var(--surface); border: 2px solid var(--border); border-radius: 12px; padding: 7px 16px; font-size: 0.82rem; font-weight: 700; color: var(--mid); }
+.score-chip span { color: var(--dark); font-size: 1rem; }
+
+/* PROGRESS */
+.progress-bar-wrap { background: var(--surface2); border-radius: 20px; height: 8px; overflow: hidden; }
+.progress-bar-fill { height: 100%; border-radius: 20px; background: var(--green); transition: width 0.4s ease; }
+.progress-row { display: flex; align-items: center; gap: 10px; }
+.progress-label { font-size: 0.75rem; color: var(--mid); font-weight: 600; white-space: nowrap; }
+
+/* CARD */
+.card {
+  background: var(--surface); border-radius: 24px;
+  padding: 36px 28px 28px; border: 2px solid var(--border);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.07);
+  display: flex; flex-direction: column; align-items: center; gap: 20px;
+  min-height: 300px; justify-content: center;
+  transition: border-color 0.2s;
+}
+.card.correct-state { border-color: var(--green); background: #f0fbf5; }
+.card.wrong-state   { border-color: var(--coral); background: #fef5f4; }
+
+/* WORD with blank */
+.word-display {
+  font-family: 'Poppins', sans-serif;
+  font-size: 3rem; font-weight: 800;
+  letter-spacing: 0.04em; color: var(--dark);
+  display: flex; align-items: center; gap: 0;
+  flex-wrap: wrap; justify-content: center;
+}
+.word-blank {
+  display: inline-block;
+  min-width: 64px; border-bottom: 4px solid var(--coral);
+  color: var(--coral); text-align: center;
+  transition: all 0.2s;
+}
+.word-blank.filled-correct { color: var(--green); border-color: var(--green); }
+.word-blank.filled-wrong   { color: var(--coral); border-color: var(--coral); animation: shake 0.35s ease; }
+
+/* CONTEXT CLUE */
+.context-clue {
+  font-size: 0.9rem; color: var(--mid); font-style: italic;
+  text-align: center; max-width: 380px; line-height: 1.5;
+}
+
+/* CHOICES */
+.choice-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; width: 100%;
+}
+.choice-btn {
+  font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 1.15rem;
+  padding: 16px 8px; border-radius: 14px; cursor: pointer;
+  border: 3px solid var(--border); background: var(--surface2);
+  color: var(--dark); transition: all 0.13s; letter-spacing: 0.04em;
+}
+.choice-btn:hover:not(:disabled) { background: var(--blue); border-color: #90c0d4; transform: translateY(-2px); }
+.choice-btn:disabled { cursor: default; }
+.choice-btn.correct { background: #e0f5ec; border-color: var(--green); color: var(--green); }
+.choice-btn.wrong   { background: #fde8e6; border-color: var(--coral); color: var(--coral); animation: shake 0.35s ease; }
+
+/* FEEDBACK */
+.feedback-text {
+  font-size: 0.88rem; font-weight: 700; min-height: 1.4em;
+  color: var(--mid); text-align: center;
+}
+.feedback-text.correct { color: var(--green); }
+.feedback-text.wrong   { color: var(--coral); }
+
+/* NAV */
+.nav-row { display: flex; gap: 10px; justify-content: center; }
+.btn { font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 0.82rem; padding: 9px 18px; border-radius: 10px; border: 2px solid var(--border); background: var(--surface2); color: var(--mid); cursor: pointer; transition: all 0.13s; }
+.btn:hover { border-color: var(--dark); color: var(--dark); }
+.btn-next { background: var(--dark); color: var(--bg); border-color: var(--dark); }
+.btn-next:hover { background: #444; color: white; }
+
+/* WIN */
+#win-overlay { display: none; position: fixed; inset: 0; background: rgba(44,36,22,0.82); backdrop-filter: blur(3px); z-index: 50; align-items: center; justify-content: center; }
+#win-overlay.show { display: flex; }
+.win-card { background: var(--surface); border-radius: 24px; padding: 44px 52px; text-align: center; max-width: 400px; width: 90%; border: 3px solid var(--yellow); }
+.win-card h2 { font-size: 2rem; font-weight: 800; margin-bottom: 8px; }
+.win-card p { color: var(--mid); margin-bottom: 8px; font-size: 0.95rem; }
+.win-score { font-size: 1.5rem; font-weight: 800; color: var(--coral); margin-bottom: 20px; }
+.win-btn { font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 1rem; padding: 12px 32px; border-radius: 12px; border: none; background: var(--dark); color: var(--bg); cursor: pointer; }
+
+@keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
+@keyframes popIn { 0%{transform:scale(0.9);opacity:0} 100%{transform:scale(1);opacity:1} }
+
+@media (max-width: 480px) {
+  .word-display { font-size: 2.2rem; }
+  .choice-grid { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Missing Vowel Team</h1>
+  <div class="hdr-badge">Unit 6 · ee / ea / ai / ay</div>
+</header>
+
+<div class="page">
+  <div class="subtitle-bar">Choose the correct vowel team to complete each word</div>
+
+  <div class="score-bar">
+    <div class="score-chip">Correct: <span id="correct-count">0</span></div>
+    <div class="score-chip">Score: <span id="score-pct">—</span></div>
+    <div class="score-chip">Remaining: <span id="remaining-count">0</span></div>
+  </div>
+
+  <div class="progress-row">
+    <div class="progress-bar-wrap" style="flex:1;">
+      <div class="progress-bar-fill" id="progress-fill" style="width:0%"></div>
+    </div>
+    <div class="progress-label" id="progress-label">0 / 0</div>
+  </div>
+
+  <div class="card" id="main-card">
+    <div class="word-display" id="word-display"></div>
+    <div class="context-clue" id="context-clue"></div>
+    <div class="choice-grid" id="choice-grid"></div>
+    <div class="feedback-text" id="feedback-text"></div>
+  </div>
+
+  <div class="nav-row">
+    <button class="btn" onclick="resetGame()">&#8635; New Round</button>
+    <button class="btn btn-next" id="next-btn" onclick="nextQuestion()" style="display:none;">Next Word &#8594;</button>
+  </div>
+</div>
+
+<div id="win-overlay">
+  <div class="win-card">
+    <h2>&#127881; Complete!</h2>
+    <p>All words completed!</p>
+    <div class="win-score" id="win-score"></div>
+    <button class="win-btn" onclick="resetGame()">Play Again</button>
+  </div>
+</div>
+
+<script>
+// Each item: word with __ where the vowel team goes, the team, distractors, a context clue
+const ITEMS = [
+  // ee words
+  { before: "f",   blank: "ee", after: "t",    clue: "What you walk on", options: ["ee","ea","ai","ay"] },
+  { before: "cr",  blank: "ee", after: "k",    clue: "A small stream (rhymes with week)", options: ["ee","ea","ai","ay"] },
+  { before: "str", blank: "ee", after: "t",    clue: "Cars drive on this in a city", options: ["ee","ea","ai","ay"] },
+  { before: "fr",  blank: "ee", after: "dom",  clue: "The state of being free", options: ["ee","ea","ai","ay"] },
+  { before: "b",   blank: "ee", after: "tween", clue: "In the middle of two things", options: ["ee","ea","ai","ay"] },
+  { before: "st",  blank: "ee", after: "p",    clue: "A sharp slope; not shallow", options: ["ee","ea","ai","ay"] },
+  { before: "sp",  blank: "ee", after: "d",    clue: "How fast something moves", options: ["ee","ea","ai","ay"] },
+  // ea words
+  { before: "",    blank: "ea", after: "t",    clue: "To have food — time to ___!", options: ["ea","ee","ai","ay"] },
+  { before: "b",   blank: "ea", after: "ch",   clue: "Sand by the ocean", options: ["ea","ee","ai","ay"] },
+  { before: "st",  blank: "ea", after: "m",    clue: "Hot water vapour — from a kettle", options: ["ea","ee","ai","ay"] },
+  { before: "p",   blank: "ea", after: "nut",  clue: "A small legume — often made into butter", options: ["ea","ee","ai","ay"] },
+  { before: "s",   blank: "ea", after: "son",  clue: "Winter, spring, summer, or fall", options: ["ea","ee","ai","ay"] },
+  { before: "dr",  blank: "ea", after: "m",    clue: "What happens in your sleep", options: ["ea","ee","ai","ay"] },
+  { before: "r",   blank: "ea", after: "son",  clue: "Why something happened — the ___ for being late", options: ["ea","ee","ai","ay"] },
+  // ai words
+  { before: "r",   blank: "ai", after: "n",    clue: "Water that falls from the sky", options: ["ai","ay","ee","ea"] },
+  { before: "tr",  blank: "ai", after: "n",    clue: "It runs on tracks", options: ["ai","ay","ee","ea"] },
+  { before: "sn",  blank: "ai", after: "l",    clue: "A slow creature with a shell", options: ["ai","ay","ee","ea"] },
+  { before: "br",  blank: "ai", after: "n",    clue: "The organ inside your skull", options: ["ai","ay","ee","ea"] },
+  { before: "afr", blank: "ai", after: "d",    clue: "Feeling scared or frightened", options: ["ai","ay","ee","ea"] },
+  { before: "rem", blank: "ai", after: "n",    clue: "To stay behind (re + main)", options: ["ai","ay","ee","ea"] },
+  { before: "expl",blank: "ai", after: "n",    clue: "To describe something clearly", options: ["ai","ay","ee","ea"] },
+  // ay words
+  { before: "pl",  blank: "ay", after: "",     clue: "What children do at recess", options: ["ay","ai","ee","ea"] },
+  { before: "spr", blank: "ay", after: "",     clue: "Water shot out in fine drops", options: ["ay","ai","ee","ea"] },
+  { before: "del", blank: "ay", after: "",     clue: "To put something off — a schedule ___", options: ["ay","ai","ee","ea"] },
+  { before: "cr",  blank: "ay", after: "on",   clue: "A waxy colouring stick", options: ["ay","ai","ee","ea"] },
+  { before: "betr",blank: "ay", after: "",     clue: "To be disloyal to someone", options: ["ay","ai","ee","ea"] },
+  { before: "alw", blank: "ay", after: "s",    clue: "Every single time — ___ be kind", options: ["ay","ai","ee","ea"] },
+];
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i+1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+let queue = [], current = null, correct = 0, total = 0, answered = false;
+
+function resetGame() {
+  correct = 0; total = 0; answered = false;
+  queue = shuffle([...ITEMS]);
+  document.getElementById('win-overlay').classList.remove('show');
+  document.getElementById('next-btn').style.display = 'none';
+  document.getElementById('main-card').className = 'card';
+  updateScores();
+  nextQuestion();
+}
+
+function nextQuestion() {
+  if (!queue.length) {
+    showWin(); return;
+  }
+  answered = false;
+  current = queue.shift();
+  document.getElementById('next-btn').style.display = 'none';
+  document.getElementById('feedback-text').textContent = '';
+  document.getElementById('feedback-text').className = 'feedback-text';
+  document.getElementById('main-card').className = 'card';
+  renderQuestion();
+  updateProgress();
+}
+
+function renderQuestion() {
+  // Word display
+  const wd = document.getElementById('word-display');
+  wd.innerHTML =
+    '<span>' + current.before + '</span>' +
+    '<span class="word-blank" id="word-blank">___</span>' +
+    '<span>' + current.after + '</span>';
+
+  document.getElementById('context-clue').textContent = current.clue;
+
+  // Shuffle options (but keep them as given — already randomised per item)
+  const grid = document.getElementById('choice-grid');
+  grid.innerHTML = '';
+  current.options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn';
+    btn.textContent = opt;
+    btn.onclick = () => choose(opt, btn);
+    grid.appendChild(btn);
+  });
+}
+
+function choose(opt, btn) {
+  if (answered) return;
+  answered = true;
+  total++;
+
+  const blank = document.getElementById('word-blank');
+  blank.textContent = opt;
+
+  const isCorrect = opt === current.blank;
+
+  if (isCorrect) {
+    correct++;
+    btn.classList.add('correct');
+    blank.classList.add('filled-correct');
+    document.getElementById('main-card').classList.add('correct-state');
+    document.getElementById('feedback-text').textContent = 'Correct!';
+    document.getElementById('feedback-text').className = 'feedback-text correct';
+  } else {
+    btn.classList.add('wrong');
+    blank.classList.add('filled-wrong');
+    blank.textContent = opt;
+    document.getElementById('main-card').classList.add('wrong-state');
+    document.getElementById('feedback-text').textContent =
+      'The answer is "' + current.blank + '" — ' +
+      current.before + current.blank + current.after;
+    document.getElementById('feedback-text').className = 'feedback-text wrong';
+    // Show correct answer
+    document.querySelectorAll('.choice-btn').forEach(b => {
+      if (b.textContent === current.blank) b.classList.add('correct');
+      b.disabled = true;
+    });
+  }
+
+  // Disable all buttons
+  document.querySelectorAll('.choice-btn').forEach(b => b.disabled = true);
+
+  updateScores();
+
+  if (queue.length > 0) {
+    document.getElementById('next-btn').style.display = 'inline-block';
+  } else {
+    setTimeout(showWin, 900);
+  }
+}
+
+function updateScores() {
+  document.getElementById('correct-count').textContent = correct;
+  const pct = total > 0 ? Math.round(correct / total * 100) + '%' : '—';
+  document.getElementById('score-pct').textContent = pct;
+  document.getElementById('remaining-count').textContent = queue.length + (current && !answered ? 1 : 0);
+}
+
+function updateProgress() {
+  const done = ITEMS.length - queue.length - 1;
+  const pct = ITEMS.length > 0 ? Math.round(Math.max(0, done) / ITEMS.length * 100) : 0;
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-label').textContent =
+    Math.max(0, done) + ' / ' + ITEMS.length;
+}
+
+function showWin() {
+  document.getElementById('win-score').textContent = correct + ' / ' + total + ' correct';
+  document.getElementById('win-overlay').classList.add('show');
+}
+
+resetGame();
+</script>
+</body>
+</html>

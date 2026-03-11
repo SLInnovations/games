@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Word Search: Unit 6 Patterns</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* shared word search styles - ws_shared.css */
+:root {
+  --bg: #faf8f3;
+  --surface: #ffffff;
+  --surface2: #f0ede6;
+  --dark: #2c2416;
+  --mid: #7a6e5e;
+  --border: #ddd8cc;
+  --coral: #e66b5d;
+  --blue: #d7ecf0;
+  --yellow: #f3d25b;
+  --green: #52b788;
+  --found-bg: #e8f4f7;
+  --found-border: #90c8d4;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--dark); min-height: 100vh; }
+
+header {
+  background: var(--dark);
+  padding: 14px 24px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+header h1 { font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 1.4rem; color: var(--bg); }
+.hdr-badge {
+  background: rgba(255,255,255,0.12); border-radius: 20px;
+  padding: 4px 14px; font-size: 0.78rem; color: rgba(255,255,255,0.7); font-weight: 600;
+}
+
+.page { max-width: 900px; margin: 0 auto; padding: 20px 16px 40px; display: flex; flex-direction: column; gap: 16px; }
+
+.subtitle-bar {
+  text-align: center;
+  font-size: 0.82rem; font-weight: 600; color: var(--mid);
+  letter-spacing: 0.06em; text-transform: uppercase;
+}
+
+.game-layout {
+  display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap;
+}
+
+/* GRID */
+.ws-grid-wrap {
+  background: var(--surface);
+  border-radius: 18px;
+  padding: 16px;
+  border: 2px solid var(--border);
+  flex: 0 0 auto;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+#ws-grid {
+  display: grid;
+  gap: 3px;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.ws-cell {
+  width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Courier New', monospace;
+  font-size: 0.95rem; font-weight: 700;
+  border-radius: 6px;
+  border: 1.5px solid transparent;
+  background: var(--surface2);
+  color: var(--dark);
+  cursor: pointer;
+  transition: all 0.1s;
+}
+.ws-cell:hover { border-color: var(--border); }
+.ws-cell.selecting {
+  background: #fff3cd;
+  border-color: var(--yellow);
+  color: var(--dark);
+}
+.ws-cell.found {
+  background: var(--found-bg);
+  border-color: var(--found-border);
+  color: #2a7a8a;
+}
+.ws-cell.found-grapheme {
+  background: var(--accent, #e66b5d);
+  border-color: var(--accent, #e66b5d);
+  color: white;
+  font-weight: 800;
+}
+
+/* WORD LIST */
+.ws-panel { flex: 1; min-width: 200px; }
+.panel-title {
+  font-weight: 700; font-size: 0.72rem;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--mid); margin-bottom: 10px;
+}
+#ws-wordlist { display: flex; flex-direction: column; gap: 6px; }
+.wl-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.95rem; font-weight: 700;
+  color: var(--dark);
+  transition: all 0.2s;
+}
+.wl-item.wl-found {
+  background: var(--found-bg);
+  border-color: var(--found-border);
+  color: #2a7a8a;
+  text-decoration: line-through;
+  opacity: 0.7;
+}
+.wl-check { font-size: 0.85rem; color: var(--mid); flex-shrink: 0; }
+.wl-item.wl-found .wl-check::before { content: '✓'; color: var(--green); }
+.wl-item.wl-found .wl-check { font-size: 0; }
+.wl-grapheme { color: var(--coral); font-weight: 800; border-bottom: 2px solid var(--coral); }
+.wl-item.wl-found .wl-grapheme { color: #2a7a8a; border-bottom-color: #2a7a8a; }
+
+/* progress */
+.progress-bar-wrap {
+  background: var(--surface2); border-radius: 20px; height: 8px; overflow: hidden; margin-bottom: 4px;
+}
+.progress-bar-fill {
+  height: 100%; border-radius: 20px; background: var(--green);
+  transition: width 0.4s ease;
+}
+.progress-label { font-size: 0.75rem; color: var(--mid); font-weight: 600; }
+
+/* WIN */
+#ws-win {
+  display: none; position: fixed; inset: 0;
+  background: rgba(44,36,22,0.82); backdrop-filter: blur(3px);
+  z-index: 50; align-items: center; justify-content: center;
+}
+#ws-win.show { display: flex; }
+.win-card {
+  background: var(--surface); border-radius: 24px;
+  padding: 44px 52px; text-align: center; max-width: 380px; width: 90%;
+  border: 3px solid var(--yellow);
+}
+.win-card h2 { font-size: 2rem; font-weight: 800; margin-bottom: 8px; }
+.win-card p { color: var(--mid); margin-bottom: 24px; font-size: 0.95rem; }
+.win-btn {
+  font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 1rem;
+  padding: 12px 32px; border-radius: 12px; border: none;
+  background: var(--dark); color: var(--bg); cursor: pointer;
+  transition: all 0.13s;
+}
+.win-btn:hover { transform: translateY(-2px); }
+
+@media (max-width: 580px) {
+  .ws-cell { width: 28px; height: 28px; font-size: 0.78rem; }
+  .game-layout { flex-direction: column; }
+}
+
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Word Search: Unit 6 Patterns</h1>
+  <div class="hdr-badge">Unit 6 · Silent Letters & More</div>
+</header>
+
+<div class="page">
+  <div class="subtitle-bar">igh · ph · kn · wr · mb</div>
+
+  <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+    <div style="flex:1;min-width:160px;">
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-fill" id="progress-fill" style="width:0%"></div>
+      </div>
+      <div class="progress-label">
+        <span id="found-count">0</span> / <span id="total-count">0</span> words found
+      </div>
+    </div>
+    <button onclick="resetGame()" style="font-family:Poppins,sans-serif;font-weight:700;font-size:0.8rem;padding:8px 16px;border-radius:10px;border:2px solid var(--border);background:var(--surface2);color:var(--mid);cursor:pointer;">&#8635; New Grid</button>
+  </div>
+
+  <div style="background:var(--blue);border-radius:12px;padding:10px 16px;font-size:0.8rem;color:#2a5a68;font-weight:600;">
+    Find each word. The target pattern (igh, ph, kn, wr, or mb) is highlighted in coral when found.
+  </div>
+
+  <div class="game-layout">
+    <div class="ws-grid-wrap">
+      <div id="ws-grid"></div>
+    </div>
+    <div class="ws-panel">
+      <div class="panel-title">Find these words</div>
+      <div id="ws-wordlist"></div>
+    </div>
+  </div>
+</div>
+
+<div id="ws-win">
+  <div class="win-card">
+    <h2>&#127881; All Found!</h2>
+    <p>Every word found and every pattern spotted!</p>
+    <button class="win-btn" onclick="resetGame()">Play Again</button>
+  </div>
+</div>
+
+<script>
+// ── WORD SEARCH ENGINE (shared logic, injected into each HTML file) ──
+// CONFIG object must be defined before this script runs:
+// CONFIG = { title, subtitle, gridSize, words: [{word, grapheme}], accentColor }
+
+const DIRS = [[0,1],[1,0],[1,1],[-1,1],[0,-1],[-1,0],[-1,-1],[1,-1]];
+const EASY_DIRS = [[0,1],[1,0],[1,1],[-1,1]]; // no backwards for accessibility
+
+function buildGrid(words, size) {
+  const grid = Array.from({length: size}, () => Array(size).fill(''));
+  const placed = [];
+  const FILLERS = 'ABCDEFGHIKLMNOPRSTUW';
+
+  function canPlace(word, r, c, dr, dc) {
+    for (let i = 0; i < word.length; i++) {
+      const nr = r + dr*i, nc = c + dc*i;
+      if (nr < 0 || nr >= size || nc < 0 || nc >= size) return false;
+      if (grid[nr][nc] !== '' && grid[nr][nc] !== word[i]) return false;
+    }
+    return true;
+  }
+
+  [...words].sort((a,b) => b.word.length - a.word.length).forEach(({word, grapheme}) => {
+    const upper = word.toUpperCase();
+    for (let attempt = 0; attempt < 300; attempt++) {
+      const [dr, dc] = EASY_DIRS[Math.floor(Math.random() * EASY_DIRS.length)];
+      const r = Math.floor(Math.random() * size);
+      const c = Math.floor(Math.random() * size);
+      if (canPlace(upper, r, c, dr, dc)) {
+        for (let i = 0; i < upper.length; i++) grid[r + dr*i][c + dc*i] = upper[i];
+        placed.push({ word, grapheme, r, c, dr, dc, len: upper.length });
+        break;
+      }
+    }
+  });
+
+  for (let r = 0; r < size; r++)
+    for (let c = 0; c < size; c++)
+      if (grid[r][c] === '') grid[r][c] = FILLERS[Math.floor(Math.random() * FILLERS.length)];
+
+  return { grid, placed };
+}
+
+// State
+let gridData = null, placedWords = [], selecting = false, selStart = null, selCells = [];
+let foundWords = new Set(), accentColor = '#e66b5d';
+
+function init(config) {
+  accentColor = config.accentColor || '#e66b5d';
+  const result = buildGrid(config.words, config.gridSize || 14);
+  gridData = result.grid;
+  placedWords = result.placed;
+
+  renderGrid(config.gridSize || 14);
+  renderWordList(config.words);
+}
+
+function renderGrid(size) {
+  const container = document.getElementById('ws-grid');
+  container.style.gridTemplateColumns = `repeat(${size}, 36px)`;
+  container.innerHTML = '';
+  gridData.forEach((row, r) => {
+    row.forEach((letter, c) => {
+      const cell = document.createElement('div');
+      cell.className = 'ws-cell';
+      cell.dataset.r = r; cell.dataset.c = c;
+      cell.textContent = letter;
+      cell.addEventListener('mousedown', e => { e.preventDefault(); startSelect(r, c); });
+      cell.addEventListener('mouseover', () => { if (selecting) extendSelect(r, c); });
+      cell.addEventListener('mouseup', () => endSelect());
+      cell.addEventListener('touchstart', e => { e.preventDefault(); startSelect(r, c); }, {passive:false});
+      cell.addEventListener('touchmove', e => {
+        e.preventDefault();
+        const t = e.touches[0];
+        const el = document.elementFromPoint(t.clientX, t.clientY);
+        if (el && el.classList.contains('ws-cell')) extendSelect(+el.dataset.r, +el.dataset.c);
+      }, {passive:false});
+      cell.addEventListener('touchend', () => endSelect());
+      container.appendChild(cell);
+    });
+  });
+  document.addEventListener('mouseup', () => { if (selecting) endSelect(); });
+}
+
+function cellEl(r, c) {
+  return document.querySelector(`.ws-cell[data-r="${r}"][data-c="${c}"]`);
+}
+
+function startSelect(r, c) {
+  selecting = true; selStart = {r, c}; selCells = [{r, c}];
+  clearHighlight();
+  cellEl(r, c)?.classList.add('selecting');
+}
+
+function extendSelect(r, c) {
+  if (!selecting) return;
+  const dr = Math.sign(r - selStart.r), dc = Math.sign(c - selStart.c);
+  // Only extend along a valid straight line
+  if (dr === 0 && dc === 0) return;
+  if (dr !== 0 && dc !== 0 && Math.abs(r - selStart.r) !== Math.abs(c - selStart.c)) return;
+  clearHighlight();
+  selCells = [];
+  let cr = selStart.r, cc = selStart.c;
+  while (true) {
+    selCells.push({r: cr, c: cc});
+    cellEl(cr, cc)?.classList.add('selecting');
+    if (cr === r && cc === c) break;
+    cr += dr; cc += dc;
+    if (selCells.length > 20) break;
+  }
+}
+
+function clearHighlight() {
+  document.querySelectorAll('.ws-cell.selecting').forEach(el => el.classList.remove('selecting'));
+}
+
+function endSelect() {
+  if (!selecting) return;
+  selecting = false;
+  const selected = selCells.map(({r,c}) => gridData[r][c]).join('');
+  checkMatch(selected, selCells);
+  clearHighlight();
+  selCells = [];
+}
+
+function checkMatch(selected, cells) {
+  for (const pw of placedWords) {
+    if (foundWords.has(pw.word)) continue;
+    const word = pw.word.toUpperCase();
+    // Build expected cells
+    const expected = Array.from({length: pw.len}, (_, i) => ({r: pw.r + pw.dr*i, c: pw.c + pw.dc*i}));
+    const selStr = cells.map(({r,c}) => gridData[r][c]).join('');
+    const expectedStr = expected.map(({r,c}) => gridData[r][c]).join('');
+    // Match in either direction
+    const cellsMatch = (a, b) => a.length === b.length && a.every((x,i) => x.r === b[i].r && x.c === b[i].c);
+    const revCells = [...cells].reverse();
+    if (cellsMatch(cells, expected) || cellsMatch(revCells, expected)) {
+      foundWords.add(pw.word);
+      markFound(expected, pw.grapheme, pw.word);
+      return;
+    }
+  }
+}
+
+function markFound(cells, grapheme, word) {
+  const upper = word.toUpperCase();
+  const gUpper = grapheme.toUpperCase();
+  cells.forEach(({r, c}, i) => {
+    const el = cellEl(r, c);
+    if (!el) return;
+    el.classList.add('found');
+    // Check if this letter is part of the grapheme
+    // Find grapheme position in word
+    const gStart = upper.indexOf(gUpper);
+    const gEnd = gStart + gUpper.length;
+    if (i >= gStart && i < gEnd) {
+      el.classList.add('found-grapheme');
+      el.style.setProperty('--accent', accentColor);
+    }
+  });
+  // Mark word list item
+  const li = document.querySelector(`.wl-item[data-word="${word}"]`);
+  if (li) {
+    li.classList.add('wl-found');
+    // Highlight grapheme in word list too
+    const span = li.querySelector('.wl-grapheme');
+    if (span) span.classList.add('wl-grapheme-found');
+  }
+  // Check win
+  if (foundWords.size === placedWords.length) setTimeout(showWin, 400);
+}
+
+function renderWordList(words) {
+  const list = document.getElementById('ws-wordlist');
+  list.innerHTML = '';
+  words.forEach(({word, grapheme}) => {
+    const upper = word.toUpperCase();
+    const gUpper = grapheme.toUpperCase();
+    const gIdx = upper.indexOf(gUpper);
+    let html = '';
+    if (gIdx >= 0) {
+      html = upper.substring(0, gIdx) +
+        `<span class="wl-grapheme">${gUpper}</span>` +
+        upper.substring(gIdx + gUpper.length);
+    } else {
+      html = upper;
+    }
+    const li = document.createElement('div');
+    li.className = 'wl-item';
+    li.dataset.word = word;
+    li.innerHTML = `<span class="wl-check">○</span><span class="wl-word">${html}</span>`;
+    list.appendChild(li);
+  });
+}
+
+function showWin() {
+  document.getElementById('ws-win').classList.add('show');
+}
+
+
+const CONFIG = {
+  "title": "Word Search: Unit 6 Patterns",
+  "subtitle": "igh \u00b7 ph \u00b7 kn \u00b7 wr \u00b7 mb",
+  "accentColor": "#9b72cf",
+  "gridSize": 15,
+  "words": [
+    {
+      "word": "night",
+      "grapheme": "igh"
+    },
+    {
+      "word": "bright",
+      "grapheme": "igh"
+    },
+    {
+      "word": "flight",
+      "grapheme": "igh"
+    },
+    {
+      "word": "knight",
+      "grapheme": "kn"
+    },
+    {
+      "word": "kneel",
+      "grapheme": "kn"
+    },
+    {
+      "word": "knob",
+      "grapheme": "kn"
+    },
+    {
+      "word": "phone",
+      "grapheme": "ph"
+    },
+    {
+      "word": "graph",
+      "grapheme": "ph"
+    },
+    {
+      "word": "dolphin",
+      "grapheme": "ph"
+    },
+    {
+      "word": "wrist",
+      "grapheme": "wr"
+    },
+    {
+      "word": "wrong",
+      "grapheme": "wr"
+    },
+    {
+      "word": "wreck",
+      "grapheme": "wr"
+    },
+    {
+      "word": "thumb",
+      "grapheme": "mb"
+    },
+    {
+      "word": "climb",
+      "grapheme": "mb"
+    },
+    {
+      "word": "comb",
+      "grapheme": "mb"
+    }
+  ]
+};
+
+function resetGame() {
+  foundWords = new Set();
+  selecting = false;
+  selCells = [];
+  selStart = null;
+  document.getElementById('ws-win').classList.remove('show');
+  init(CONFIG);
+  updateProgress();
+}
+
+const _origMF = markFound;
+markFound = function(cells, grapheme, word) {
+  _origMF(cells, grapheme, word);
+  updateProgress();
+};
+
+function updateProgress() {
+  const total = placedWords.length;
+  const found = foundWords.size;
+  document.getElementById('found-count').textContent = found;
+  document.getElementById('total-count').textContent = total;
+  document.getElementById('progress-fill').style.width =
+    (total ? Math.round(found / total * 100) : 0) + '%';
+}
+
+resetGame();
+</script>
+</body>
+</html>
